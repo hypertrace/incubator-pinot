@@ -65,12 +65,12 @@
     <dependency>
       <groupId>com.google.api-client</groupId>
       <artifactId>google-api-client</artifactId>
-      <version>1.30.4</version>
+      <version>1.32.1</version>
     </dependency>
     <dependency>
       <groupId>com.google.http-client</groupId>
       <artifactId>google-http-client</artifactId>
-      <version>1.32.1</version>
+      <version>1.40.0</version>
     </dependency>
     <!-- Due to dependency convergence issues with google cloud storage: https://github.com/googleapis/google-cloud-java/issues/4175 -->
     <dependency>
