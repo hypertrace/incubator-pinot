@@ -115,7 +115,7 @@
       See also: the surefire plugin section and the profiles section.-->
     <SKIP_INTEGRATION_TESTS>true</SKIP_INTEGRATION_TESTS>
     <!-- Configuration for unit/integration tests section 1 of 3 (properties) ENDS HERE.-->
-    <avro.version>1.9.2</avro.version>
+    <avro.version>1.11.0</avro.version>
     <parquet.version>1.11.1</parquet.version>
     <helix.version>0.9.8</helix.version>
     <zkclient.version>0.7</zkclient.version>
@@ -1407,7 +1407,7 @@
           </executions>
           <configuration>
             <rules>
-              <dependencyConvergence />
+              <dependencyConvergence/>
             </rules>
           </configuration>
         </plugin>
@@ -1575,7 +1575,7 @@
             <importOrder>
               <order>,\#</order>
             </importOrder>
-            <removeUnusedImports />
+            <removeUnusedImports/>
           </java>
         </configuration>
       </plugin>
@@ -1766,7 +1766,7 @@
         <configuration>
           <shadedArtifactAttached>true</shadedArtifactAttached>
           <transformers>
-            <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
+            <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
             <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
               <mainClass>${mainClass}</mainClass>
             </transformer>
