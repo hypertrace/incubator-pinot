@@ -65,7 +65,7 @@
     <dependency>
       <groupId>com.google.api-client</groupId>
       <artifactId>google-api-client</artifactId>
-      <version>1.30.4</version>
+      <version>1.32.1</version>
     </dependency>
     <dependency>
       <groupId>com.google.http-client</groupId>
@@ -132,7 +132,7 @@
     <dependency>
       <groupId>com.google.cloud</groupId>
       <artifactId>google-cloud-nio</artifactId>
-      <version>0.120.0-alpha</version>
+      <version>0.121.1</version>
     </dependency>
   </dependencies>
 </project>
