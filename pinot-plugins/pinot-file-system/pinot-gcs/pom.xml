@@ -46,7 +46,7 @@
     <dependency>
       <groupId>com.google.cloud</groupId>
       <artifactId>google-cloud-storage</artifactId>
-      <version>1.113.1</version>
+      <version>1.113.14-sp.3</version>
       <exclusions>
         <exclusion>
           <groupId>com.google.guava</groupId>
