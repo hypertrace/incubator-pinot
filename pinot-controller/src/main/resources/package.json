@@ -87,6 +87,6 @@
     "react-spring": "^8.0.27",
     "system": "^2.0.1",
     "url-loader": "^4.1.0",
-    "webpack-dev-server": "3.2.1"
+    "webpack-dev-server": "4.0.0"
   }
 }
