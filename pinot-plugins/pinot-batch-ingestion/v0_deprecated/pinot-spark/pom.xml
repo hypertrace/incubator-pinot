@@ -33,10 +33,10 @@
   <url>https://pinot.apache.org/</url>
   <properties>
     <pinot.root>${basedir}/../../../..</pinot.root>
-    <spark.version>2.4.0</spark.version>
+    <spark.version>2.4.6</spark.version>
     <scala.binary.version>2.11</scala.binary.version>
     <scala.version>2.11.11</scala.version>
-    <hadoop.version>2.10.1</hadoop.version>
+    <hadoop.version>3.3.3</hadoop.version>
     <phase.prop>package</phase.prop>
   </properties>
   <profiles>
