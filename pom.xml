@@ -122,13 +122,13 @@
     <parquet.version>1.11.1</parquet.version>
     <helix.version>0.9.8</helix.version>
     <zkclient.version>0.7</zkclient.version>
-    <jackson.version>2.10.0</jackson.version>
+    <jackson.version>2.12.7.1</jackson.version>
     <zookeeper.version>3.5.8</zookeeper.version>
     <async-http-client.version>2.12.3</async-http-client.version>
     <jersey.version>2.35</jersey.version>
     <grizzly.version>2.4.4</grizzly.version>
     <hk2.version>2.6.1</hk2.version>
-    <swagger.version>1.5.16</swagger.version>
+    <swagger.version>1.6.8</swagger.version>
     <hadoop.version>2.10.1</hadoop.version>
     <antlr.version>4.6</antlr.version>
     <jsonpath.version>2.7.0</jsonpath.version>
