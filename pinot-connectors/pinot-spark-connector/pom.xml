@@ -33,8 +33,8 @@
   <url>https://pinot.apache.org/</url>
   <properties>
     <pinot.root>${basedir}/../..</pinot.root>
-    <spark.version>2.4.5</spark.version>
-    <circe.version>0.13.0</circe.version>
+    <spark.version>3.4.0</spark.version>
+    <circe.version>0.14.2</circe.version>
     <paranameter.version>2.8</paranameter.version>
     <scalaxml.version>1.3.0</scalaxml.version>
     <scalatest.version>3.1.1</scalatest.version>
