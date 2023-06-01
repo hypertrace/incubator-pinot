@@ -38,6 +38,7 @@ package org.apache.pinot.segment.local.segment.index.loader.invertedindex;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -47,6 +48,7 @@ import org.apache.pinot.segment.local.segment.index.loader.LoaderUtils;
 import org.apache.pinot.segment.local.segment.index.loader.SegmentPreProcessor;
 import org.apache.pinot.segment.local.segment.store.TextIndexUtils;
 import org.apache.pinot.segment.spi.ColumnMetadata;
+import org.apache.pinot.segment.spi.SegmentMetadata;
 import org.apache.pinot.segment.spi.creator.IndexCreationContext;
 import org.apache.pinot.segment.spi.creator.IndexCreatorProvider;
 import org.apache.pinot.segment.spi.creator.TextIndexCreatorProvider;
@@ -111,7 +113,7 @@ public class TextIndexHandler extends BaseIndexHandler {
     // Check if any new index need to be added.
     for (String column : columnsToAddIdx) {
       ColumnMetadata columnMetadata = _segmentDirectory.getSegmentMetadata().getColumnMetadataFor(column);
-      if (shouldCreateTextIndex(columnMetadata)) {
+      if (shouldCreateTextIndex(columnMetadata, _segmentDirectory.getSegmentMetadata())) {
         LOGGER.info("Need to create new text index for segment: {}, column: {}", segmentName, column);
         return true;
       }
@@ -135,17 +137,20 @@ public class TextIndexHandler extends BaseIndexHandler {
     }
     for (String column : columnsToAddIdx) {
       ColumnMetadata columnMetadata = _segmentDirectory.getSegmentMetadata().getColumnMetadataFor(column);
-      if (shouldCreateTextIndex(columnMetadata)) {
+      if (shouldCreateTextIndex(columnMetadata, _segmentDirectory.getSegmentMetadata())) {
         createTextIndexForColumn(segmentWriter, columnMetadata, indexCreatorProvider, indexCreatorProvider);
       }
     }
   }
 
-  private boolean shouldCreateTextIndex(ColumnMetadata columnMetadata) {
+  private boolean shouldCreateTextIndex(ColumnMetadata columnMetadata, SegmentMetadata segmentMetadata) {
     if (columnMetadata != null) {
       // Fail fast upon unsupported operations.
       checkUnsupportedOperationsForTextIndex(columnMetadata);
-      return true;
+
+      // Create text index only for those segments that are created within recent time-window
+      return segmentMetadata == null
+          || segmentMetadata.getIndexCreationTime() >= Instant.now().minusSeconds(3600).toEpochMilli();
     }
     return false;
   }
