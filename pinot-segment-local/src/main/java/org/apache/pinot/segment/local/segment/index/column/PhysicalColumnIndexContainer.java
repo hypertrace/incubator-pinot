@@ -95,10 +95,20 @@ public final class PhysicalColumnIndexContainer implements ColumnIndexContainer 
       _nullValueVectorReader = null;
     }
 
-    if (loadTextIndex && segmentIndexDir != null) {
-      Preconditions.checkState(segmentReader.hasIndexFor(columnName, ColumnIndexType.TEXT_INDEX));
+    if (loadTextIndex
+        && segmentIndexDir != null) {
+      boolean hasIndexFor = segmentReader.hasIndexFor(columnName, ColumnIndexType.TEXT_INDEX);
       Map<String, Map<String, String>> columnProperties = indexLoadingConfig.getColumnProperties();
-      _textIndex = indexReaderProvider.newTextIndexReader(segmentIndexDir, metadata, columnProperties.get(columnName));
+      if (processExistingSegments(columnName, columnProperties)) {
+        Preconditions.checkState(hasIndexFor);
+        _textIndex = indexReaderProvider.newTextIndexReader(segmentIndexDir, metadata, columnProperties.get(columnName));
+      } else if(hasIndexFor) {
+        LOGGER.info("creating index reader for segmentDir:{}, for column:{} with skipExistingSegments.", segmentIndexDir, columnName);
+        _textIndex = indexReaderProvider.newTextIndexReader(segmentIndexDir, metadata, columnProperties.get(columnName));
+      } else {
+        LOGGER.info("skipping index reader for segmentDir:{} for column:{} with skipExistingSegments.", segmentIndexDir, columnName);
+        _textIndex = null;
+      }
     } else {
       _textIndex = null;
     }
@@ -302,5 +312,14 @@ public final class PhysicalColumnIndexContainer implements ColumnIndexContainer 
     if (_bloomFilter != null) {
       _bloomFilter.close();
     }
+  }
+
+  private boolean processExistingSegments(String columnName, Map<String, Map<String, String>> columnProperties) {
+    final String SKIP_EXISTING_SEGMENTS = "skipExistingSegments";
+    if (!columnProperties.containsKey(columnName)
+        || !columnProperties.get(columnName).containsKey(SKIP_EXISTING_SEGMENTS)) {
+      return true;
+    }
+    return !Boolean.parseBoolean(columnProperties.get(columnName).get(SKIP_EXISTING_SEGMENTS));
   }
 }
