@@ -101,12 +101,16 @@ public final class PhysicalColumnIndexContainer implements ColumnIndexContainer 
       Map<String, Map<String, String>> columnProperties = indexLoadingConfig.getColumnProperties();
       if (processExistingSegments(columnName, columnProperties)) {
         Preconditions.checkState(hasIndexFor);
-        _textIndex = indexReaderProvider.newTextIndexReader(segmentIndexDir, metadata, columnProperties.get(columnName));
-      } else if(hasIndexFor) {
-        LOGGER.info("creating index reader for segmentDir:{}, for column:{} with skipExistingSegments.", segmentIndexDir, columnName);
-        _textIndex = indexReaderProvider.newTextIndexReader(segmentIndexDir, metadata, columnProperties.get(columnName));
+        _textIndex = indexReaderProvider.newTextIndexReader(segmentIndexDir, metadata,
+            columnProperties.get(columnName));
+      } else if (hasIndexFor) {
+        LOGGER.info("creating index reader for segmentDir: {}, for column: {} "
+            + "with skipExistingSegments.", segmentIndexDir, columnName);
+        _textIndex = indexReaderProvider.newTextIndexReader(segmentIndexDir, metadata,
+            columnProperties.get(columnName));
       } else {
-        LOGGER.info("skipping index reader for segmentDir:{} for column:{} with skipExistingSegments.", segmentIndexDir, columnName);
+        LOGGER.info("skipping index reader for segmentDir: {} for column: {} "
+            + "with skipExistingSegments.", segmentIndexDir, columnName);
         _textIndex = null;
       }
     } else {
@@ -315,11 +319,11 @@ public final class PhysicalColumnIndexContainer implements ColumnIndexContainer 
   }
 
   private boolean processExistingSegments(String columnName, Map<String, Map<String, String>> columnProperties) {
-    final String SKIP_EXISTING_SEGMENTS = "skipExistingSegments";
+    final String skipExistingSegments = "skipExistingSegments";
     if (!columnProperties.containsKey(columnName)
-        || !columnProperties.get(columnName).containsKey(SKIP_EXISTING_SEGMENTS)) {
+        || !columnProperties.get(columnName).containsKey(skipExistingSegments)) {
       return true;
     }
-    return !Boolean.parseBoolean(columnProperties.get(columnName).get(SKIP_EXISTING_SEGMENTS));
+    return !Boolean.parseBoolean(columnProperties.get(columnName).get(skipExistingSegments));
   }
 }
