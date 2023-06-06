@@ -138,9 +138,11 @@ public class TextIndexHandler extends BaseIndexHandler {
     }
     for (String column : columnsToAddIdx) {
       ColumnMetadata columnMetadata = _segmentMetadata.getColumnMetadataFor(column);
-      LOGGER.info("Creating text index from segment: {}, column: {}", segmentName, column);
       if (shouldCreateTextIndex(columnMetadata)) {
+        LOGGER.info("Creating text index from segment: {}, column: {}", segmentName, column);
         createTextIndexForColumn(segmentWriter, columnMetadata, indexCreatorProvider, indexCreatorProvider);
+      } else {
+        LOGGER.info("Skipping creation of text index from segment: {}, column: {}", segmentName, column);
       }
     }
   }
