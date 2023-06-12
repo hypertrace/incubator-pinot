@@ -187,6 +187,7 @@ public class TextIndexHandler extends BaseIndexHandler {
   private boolean processExistingSegments(ColumnMetadata columnMetadata) {
     String columnName = columnMetadata.getColumnName();
     if (!_columnProperties.containsKey(columnName)
+        || _columnProperties.get(columnName) == null
         || !_columnProperties.get(columnName).containsKey(SKIP_EXISTING_SEGMENTS)) {
       return true;
     }

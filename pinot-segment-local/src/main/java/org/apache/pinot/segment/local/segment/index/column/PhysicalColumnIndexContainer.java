@@ -321,6 +321,7 @@ public final class PhysicalColumnIndexContainer implements ColumnIndexContainer 
   private boolean processExistingSegments(String columnName, Map<String, Map<String, String>> columnProperties) {
     final String skipExistingSegments = "skipExistingSegments";
     if (!columnProperties.containsKey(columnName)
+        || columnProperties.get(columnName) == null
         || !columnProperties.get(columnName).containsKey(skipExistingSegments)) {
       return true;
     }
