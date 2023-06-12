@@ -95,10 +95,24 @@ public final class PhysicalColumnIndexContainer implements ColumnIndexContainer 
       _nullValueVectorReader = null;
     }
 
-    if (loadTextIndex && segmentIndexDir != null) {
-      Preconditions.checkState(segmentReader.hasIndexFor(columnName, ColumnIndexType.TEXT_INDEX));
+    if (loadTextIndex
+        && segmentIndexDir != null) {
+      boolean hasIndexFor = segmentReader.hasIndexFor(columnName, ColumnIndexType.TEXT_INDEX);
       Map<String, Map<String, String>> columnProperties = indexLoadingConfig.getColumnProperties();
-      _textIndex = indexReaderProvider.newTextIndexReader(segmentIndexDir, metadata, columnProperties.get(columnName));
+      if (IndexLoadingConfig.processExistingSegments(columnName, columnProperties)) {
+        Preconditions.checkState(hasIndexFor);
+        _textIndex = indexReaderProvider.newTextIndexReader(segmentIndexDir, metadata,
+            columnProperties.get(columnName));
+      } else if (hasIndexFor) {
+        LOGGER.info("creating index reader for segmentDir: {}, for column: {} "
+            + "with skipExistingSegments.", segmentIndexDir, columnName);
+        _textIndex = indexReaderProvider.newTextIndexReader(segmentIndexDir, metadata,
+            columnProperties.get(columnName));
+      } else {
+        LOGGER.info("skipping index reader for segmentDir: {} for column: {} "
+            + "with skipExistingSegments.", segmentIndexDir, columnName);
+        _textIndex = null;
+      }
     } else {
       _textIndex = null;
     }
