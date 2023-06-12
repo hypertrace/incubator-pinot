@@ -153,7 +153,7 @@ public class TextIndexHandler extends BaseIndexHandler {
       checkUnsupportedOperationsForTextIndex(columnMetadata);
 
       // skip creating text index if SKIP_EXISTING_SEGMENTS is set to true.
-      return processExistingSegments(columnMetadata);
+      return IndexLoadingConfig.processExistingSegments(columnMetadata.getColumnName(), _columnProperties);
     }
     return false;
   }
@@ -168,30 +168,6 @@ public class TextIndexHandler extends BaseIndexHandler {
     if (columnMetadata.getDataType() != DataType.STRING) {
       throw new UnsupportedOperationException("Text index is currently only supported on STRING columns: " + column);
     }
-  }
-
-  /**
-   * Helper method to skip processing segments if the property SKIP_EXISTING_SEGMENTS is
-   * set to true in fieldConfigList.
-   *
-   * e.g
-   * "fieldConfigList":[
-   *   {
-   *      "name":"text_col_1",
-   *      "encodingType":"RAW",
-   *      "indexTypes": ["TEXT"],
-   *      "properties":{"fstType":"native", "skipExistingSegments":"true"}
-   *   }
-   *  ]
-   * */
-  private boolean processExistingSegments(ColumnMetadata columnMetadata) {
-    String columnName = columnMetadata.getColumnName();
-    if (!_columnProperties.containsKey(columnName)
-        || _columnProperties.get(columnName) == null
-        || !_columnProperties.get(columnName).containsKey(SKIP_EXISTING_SEGMENTS)) {
-      return true;
-    }
-    return !Boolean.parseBoolean(_columnProperties.get(columnName).get(SKIP_EXISTING_SEGMENTS));
   }
 
 

@@ -99,7 +99,7 @@ public final class PhysicalColumnIndexContainer implements ColumnIndexContainer 
         && segmentIndexDir != null) {
       boolean hasIndexFor = segmentReader.hasIndexFor(columnName, ColumnIndexType.TEXT_INDEX);
       Map<String, Map<String, String>> columnProperties = indexLoadingConfig.getColumnProperties();
-      if (processExistingSegments(columnName, columnProperties)) {
+      if (IndexLoadingConfig.processExistingSegments(columnName, columnProperties)) {
         Preconditions.checkState(hasIndexFor);
         _textIndex = indexReaderProvider.newTextIndexReader(segmentIndexDir, metadata,
             columnProperties.get(columnName));
@@ -316,15 +316,5 @@ public final class PhysicalColumnIndexContainer implements ColumnIndexContainer 
     if (_bloomFilter != null) {
       _bloomFilter.close();
     }
-  }
-
-  private boolean processExistingSegments(String columnName, Map<String, Map<String, String>> columnProperties) {
-    final String skipExistingSegments = "skipExistingSegments";
-    if (!columnProperties.containsKey(columnName)
-        || columnProperties.get(columnName) == null
-        || !columnProperties.get(columnName).containsKey(skipExistingSegments)) {
-      return true;
-    }
-    return !Boolean.parseBoolean(columnProperties.get(columnName).get(skipExistingSegments));
   }
 }
