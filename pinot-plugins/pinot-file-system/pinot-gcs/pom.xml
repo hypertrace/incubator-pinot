@@ -70,7 +70,7 @@
     <dependency>
       <groupId>com.google.http-client</groupId>
       <artifactId>google-http-client</artifactId>
-      <version>1.36.0</version>
+      <version>1.43.2</version>
     </dependency>
     <!-- Due to dependency convergence issues with google cloud storage: https://github.com/googleapis/google-cloud-java/issues/4175 -->
     <dependency>
