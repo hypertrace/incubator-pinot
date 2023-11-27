@@ -20,7 +20,6 @@ package org.apache.pinot.spi.env;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -48,20 +47,20 @@ public abstract class CommonsConfigurationUtils {
    * @return a {@link PropertiesConfiguration} instance. Empty if file does not exist.
    */
   public static PropertiesConfiguration fromFile(File file) {
-    try {
-      PropertiesConfiguration propertiesConfiguration = new PropertiesConfiguration();
+    PropertiesConfiguration propertiesConfiguration = new PropertiesConfiguration();
 
-      // Commons Configuration 1.10 does not support file path containing '%'.
-      // Explicitly providing the input stream on load bypasses the problem.
-      propertiesConfiguration.setFile(file);
-      if (file.exists()) {
-        propertiesConfiguration.load(new FileInputStream(file));
+    // Commons Configuration 1.10 does not support file path containing '%'.
+    // Explicitly providing the input stream on load bypasses the problem.
+    propertiesConfiguration.setFile(file);
+    if (file.exists()) {
+      try (InputStream inputStream = new FileInputStream(file)) {
+        propertiesConfiguration.load(inputStream);
+      } catch (ConfigurationException | IOException e) {
+        throw new RuntimeException(e);
       }
-
-      return propertiesConfiguration;
-    } catch (ConfigurationException | FileNotFoundException e) {
-      throw new RuntimeException(e);
     }
+
+    return propertiesConfiguration;
   }
 
   /**
