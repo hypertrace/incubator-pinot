@@ -22,6 +22,8 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import org.apache.pinot.segment.spi.index.reader.ForwardIndexReaderContext;
 import org.apache.pinot.segment.spi.memory.CleanerUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 /**
@@ -36,11 +38,28 @@ import org.apache.pinot.segment.spi.memory.CleanerUtil;
  * </ul>
  */
 public class ChunkReaderContext implements ForwardIndexReaderContext {
+  private static final Logger LOGGER = LoggerFactory.getLogger(ChunkReaderContext.class);
+
+  private static final boolean useHeapForLargeChunks;
+  private static final long maxDirectBufferChunkSize;
+  // default max direct buffer threshold size: 2MB
+  private static final long DEFAULT_MAX_DIRECT_BUFFER_CHUNK_SIZE = 2 * 1024 * 1024L;
+
   private final ByteBuffer _chunkBuffer;
   private int _chunkId;
 
+  static {
+    useHeapForLargeChunks = Boolean.parseBoolean(System.getProperty("useHeapForLargeChunks", "false"));
+    maxDirectBufferChunkSize = Long.parseLong(System.getProperty("maxDirectBufferChunkSize", Long.toString(DEFAULT_MAX_DIRECT_BUFFER_CHUNK_SIZE)));
+    LOGGER.info("useHeapForLargeChunks: {}, maxDirectBufferChunkSize: {}", useHeapForLargeChunks, maxDirectBufferChunkSize);
+  }
+
   public ChunkReaderContext(int maxChunkSize) {
-    _chunkBuffer = ByteBuffer.allocateDirect(maxChunkSize);
+    if(!useHeapForLargeChunks || maxChunkSize < maxDirectBufferChunkSize) {
+      _chunkBuffer = ByteBuffer.allocateDirect(maxChunkSize);
+    } else {
+      _chunkBuffer = ByteBuffer.allocate(maxChunkSize);
+    }
     _chunkId = -1;
   }
 
@@ -59,7 +78,7 @@ public class ChunkReaderContext implements ForwardIndexReaderContext {
   @Override
   public void close()
       throws IOException {
-    if (CleanerUtil.UNMAP_SUPPORTED) {
+    if (CleanerUtil.UNMAP_SUPPORTED && _chunkBuffer.isDirect()) {
       CleanerUtil.getCleaner().freeBuffer(_chunkBuffer);
     }
   }
