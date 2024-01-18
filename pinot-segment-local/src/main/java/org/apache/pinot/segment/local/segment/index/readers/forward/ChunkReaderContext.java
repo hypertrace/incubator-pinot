@@ -25,6 +25,8 @@ import java.util.List;
 import org.apache.pinot.segment.spi.index.reader.ForwardIndexReader;
 import org.apache.pinot.segment.spi.index.reader.ForwardIndexReaderContext;
 import org.apache.pinot.segment.spi.memory.CleanerUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 /**
@@ -39,14 +41,33 @@ import org.apache.pinot.segment.spi.memory.CleanerUtil;
  * </ul>
  */
 public class ChunkReaderContext implements ForwardIndexReaderContext {
+  private static final Logger LOGGER = LoggerFactory.getLogger(ChunkReaderContext.class);
+
+  private static final boolean USE_HEAP_FOR_LARGE_CHUNKS;
+  private static final long MAX_DIRECT_BUFFER_CHUNK_SIZE;
+  // default max direct buffer threshold size: 2MB
+  private static final long DEFAULT_MAX_DIRECT_BUFFER_CHUNK_SIZE = 2 * 1024 * 1024L;
+
   private final ByteBuffer _chunkBuffer;
 
   private int _chunkId;
 
   private List<ForwardIndexReader.ByteRange> _ranges;
 
+  static {
+    USE_HEAP_FOR_LARGE_CHUNKS = Boolean.parseBoolean(System.getProperty("useHeapForLargeChunks", "false"));
+    MAX_DIRECT_BUFFER_CHUNK_SIZE = Long.parseLong(System.getProperty("maxDirectBufferChunkSize",
+            Long.toString(DEFAULT_MAX_DIRECT_BUFFER_CHUNK_SIZE)));
+    LOGGER.info("useHeapForLargeChunks: {}, maxDirectBufferChunkSize: {}",
+            USE_HEAP_FOR_LARGE_CHUNKS, MAX_DIRECT_BUFFER_CHUNK_SIZE);
+  }
+
   public ChunkReaderContext(int maxChunkSize) {
-    _chunkBuffer = ByteBuffer.allocateDirect(maxChunkSize);
+    if (!USE_HEAP_FOR_LARGE_CHUNKS || maxChunkSize < MAX_DIRECT_BUFFER_CHUNK_SIZE) {
+      _chunkBuffer = ByteBuffer.allocateDirect(maxChunkSize);
+    } else {
+      _chunkBuffer = ByteBuffer.allocate(maxChunkSize);
+    }
     _chunkId = -1;
     _ranges = new ArrayList<>();
   }
@@ -54,7 +75,7 @@ public class ChunkReaderContext implements ForwardIndexReaderContext {
   @Override
   public void close()
       throws IOException {
-    if (CleanerUtil.UNMAP_SUPPORTED) {
+    if (CleanerUtil.UNMAP_SUPPORTED && _chunkBuffer.isDirect()) {
       CleanerUtil.getCleaner().freeBuffer(_chunkBuffer);
     }
   }
