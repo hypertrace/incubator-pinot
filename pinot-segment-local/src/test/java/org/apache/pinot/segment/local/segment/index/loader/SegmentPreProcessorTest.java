@@ -789,7 +789,6 @@ public class SegmentPreProcessorTest {
         assertFalse(reader.hasIndexFor(EXISTING_STRING_COL_RAW, StandardIndexes.text()));
       }
     }
-
   }
   /**
    * Test to check text index creation during segment load after text index

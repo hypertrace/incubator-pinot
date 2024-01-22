@@ -18,20 +18,24 @@
  */
 package org.apache.pinot.segment.local.segment.index.column;
 
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import javax.annotation.Nullable;
 import org.apache.pinot.segment.local.segment.index.loader.IndexLoadingConfig;
 import org.apache.pinot.segment.spi.ColumnMetadata;
-import org.apache.pinot.segment.spi.index.*;
+import org.apache.pinot.segment.spi.index.FieldIndexConfigs;
+import org.apache.pinot.segment.spi.index.IndexReader;
+import org.apache.pinot.segment.spi.index.IndexReaderConstraintException;
+import org.apache.pinot.segment.spi.index.IndexReaderFactory;
+import org.apache.pinot.segment.spi.index.IndexService;
+import org.apache.pinot.segment.spi.index.IndexType;
+import org.apache.pinot.segment.spi.index.StandardIndexes;
 import org.apache.pinot.segment.spi.index.column.ColumnIndexContainer;
 import org.apache.pinot.segment.spi.store.SegmentDirectory;
-import org.apache.pinot.spi.config.table.FieldConfig;
-import org.apache.pinot.spi.config.table.TableConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.annotation.Nullable;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 
 public final class PhysicalColumnIndexContainer implements ColumnIndexContainer {
@@ -55,14 +59,15 @@ public final class PhysicalColumnIndexContainer implements ColumnIndexContainer 
         Map<String, Map<String, String>> columnProperties = indexLoadingConfig.getColumnProperties();
         IndexReaderFactory<?> readerProvider = indexType.getReaderFactory();
         try {
-          if (!indexType.getId().equals(StandardIndexes.TEXT_ID) || IndexLoadingConfig.processExistingSegments(columnName, columnProperties)) {
+          if (!indexType.getId().equals(StandardIndexes.TEXT_ID)
+                  || IndexLoadingConfig.processExistingSegments(columnName, columnProperties)) {
             IndexReader reader = readerProvider.createIndexReader(segmentReader, fieldIndexConfigs, metadata);
             if (reader != null) {
               _readersByIndex.put(indexType, reader);
             }
           } else {
-            LOGGER.info("skipping index reader for segmentDir: {} for column: {} "
-                    + "with skipExistingSegments.", segmentReader.toSegmentDirectory().getIndexDir().toString(), columnName);
+            LOGGER.info("skipping index reader for segmentDir: {} for column: {} with skipExistingSegments.",
+                    segmentReader.toSegmentDirectory().getIndexDir().toString(), columnName);
           }
         } catch (IndexReaderConstraintException ex) {
           LOGGER.warn("Constraint violation when indexing " + columnName + " with " + indexType + " index", ex);
