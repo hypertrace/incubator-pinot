@@ -40,8 +40,8 @@ import org.slf4j.LoggerFactory;
 public class ChunkReaderContext implements ForwardIndexReaderContext {
   private static final Logger LOGGER = LoggerFactory.getLogger(ChunkReaderContext.class);
 
-  private static final boolean useHeapForLargeChunks;
-  private static final long maxDirectBufferChunkSize;
+  private static final boolean USE_HEAP_FOR_LARGE_CHUNKS;
+  private static final long MAX_DIRECT_BUFFER_CHUNK_SIZE;
   // default max direct buffer threshold size: 2MB
   private static final long DEFAULT_MAX_DIRECT_BUFFER_CHUNK_SIZE = 2 * 1024 * 1024L;
 
@@ -49,13 +49,15 @@ public class ChunkReaderContext implements ForwardIndexReaderContext {
   private int _chunkId;
 
   static {
-    useHeapForLargeChunks = Boolean.parseBoolean(System.getProperty("useHeapForLargeChunks", "false"));
-    maxDirectBufferChunkSize = Long.parseLong(System.getProperty("maxDirectBufferChunkSize", Long.toString(DEFAULT_MAX_DIRECT_BUFFER_CHUNK_SIZE)));
-    LOGGER.info("useHeapForLargeChunks: {}, maxDirectBufferChunkSize: {}", useHeapForLargeChunks, maxDirectBufferChunkSize);
+    USE_HEAP_FOR_LARGE_CHUNKS = Boolean.parseBoolean(System.getProperty("useHeapForLargeChunks", "false"));
+    MAX_DIRECT_BUFFER_CHUNK_SIZE = Long.parseLong(System.getProperty("maxDirectBufferChunkSize",
+            Long.toString(DEFAULT_MAX_DIRECT_BUFFER_CHUNK_SIZE)));
+    LOGGER.info("useHeapForLargeChunks: {}, maxDirectBufferChunkSize: {}",
+            USE_HEAP_FOR_LARGE_CHUNKS, MAX_DIRECT_BUFFER_CHUNK_SIZE);
   }
 
   public ChunkReaderContext(int maxChunkSize) {
-    if(!useHeapForLargeChunks || maxChunkSize < maxDirectBufferChunkSize) {
+    if (!USE_HEAP_FOR_LARGE_CHUNKS || maxChunkSize < MAX_DIRECT_BUFFER_CHUNK_SIZE) {
       _chunkBuffer = ByteBuffer.allocateDirect(maxChunkSize);
     } else {
       _chunkBuffer = ByteBuffer.allocate(maxChunkSize);
