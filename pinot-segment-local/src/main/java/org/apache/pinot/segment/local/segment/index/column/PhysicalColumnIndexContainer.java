@@ -55,27 +55,35 @@ public final class PhysicalColumnIndexContainer implements ColumnIndexContainer 
 
     _readersByIndex = new HashMap<>();
     for (IndexType<?, ?, ?> indexType : IndexService.getInstance().getAllIndexes()) {
-      if (segmentReader.hasIndexFor(columnName, indexType)) {
-        Map<String, Map<String, String>> columnProperties = indexLoadingConfig.getColumnProperties();
-        IndexReaderFactory<?> readerProvider = indexType.getReaderFactory();
-        try {
-          if (!indexType.getId().equals(StandardIndexes.TEXT_ID)
-                  || IndexLoadingConfig.processExistingSegments(columnName, columnProperties)) {
-            IndexReader reader = readerProvider.createIndexReader(segmentReader, fieldIndexConfigs, metadata);
-            if (reader != null) {
-              _readersByIndex.put(indexType, reader);
-            }
-          } else {
-            LOGGER.info("skipping index reader for segmentDir: {} for column: {} with skipExistingSegments.",
-                    segmentReader.toSegmentDirectory().getIndexDir().toString(), columnName);
-          }
-        } catch (IndexReaderConstraintException ex) {
-          LOGGER.warn("Constraint violation when indexing " + columnName + " with " + indexType + " index", ex);
-        }
+      Map<String, Map<String, String>> columnProperties = indexLoadingConfig.getColumnProperties();
+      if (!indexType.getId().equals(StandardIndexes.TEXT_ID)) {
+        prepareIndexReader(segmentReader, indexType, fieldIndexConfigs, metadata);
+      } else if (IndexLoadingConfig.processExistingSegments(columnName, columnProperties)) {
+        prepareIndexReader(segmentReader, indexType, fieldIndexConfigs, metadata);
+      } else {
+        LOGGER.info("skipping index reader for segmentDir: {} for column: {} with skipExistingSegments.",
+                segmentReader.toSegmentDirectory().getIndexDir().toString(), columnName);
       }
     }
   }
 
+  private void prepareIndexReader(SegmentDirectory.Reader segmentReader,
+                                  IndexType<?, ?, ?> indexType,
+                                  FieldIndexConfigs fieldIndexConfigs,
+                                  ColumnMetadata metadata) {
+    String columnName = metadata.getColumnName();
+    if (segmentReader.hasIndexFor(columnName, indexType)) {
+      IndexReaderFactory<?> readerProvider = indexType.getReaderFactory();
+      try {
+        IndexReader reader = readerProvider.createIndexReader(segmentReader, fieldIndexConfigs, metadata);
+        if (reader != null) {
+          _readersByIndex.put(indexType, reader);
+        }
+      } catch (IndexReaderConstraintException | IOException ex) {
+        LOGGER.warn("Constraint violation when indexing " + columnName + " with " + indexType + " index", ex);
+      }
+    }
+  }
 
   @Nullable
   @Override
