@@ -55,10 +55,11 @@ public final class PhysicalColumnIndexContainer implements ColumnIndexContainer 
 
     _readersByIndex = new HashMap<>();
     for (IndexType<?, ?, ?> indexType : IndexService.getInstance().getAllIndexes()) {
+      boolean hasIndexFor = segmentReader.hasIndexFor(columnName, indexType);
       Map<String, Map<String, String>> columnProperties = indexLoadingConfig.getColumnProperties();
       if (!indexType.getId().equals(StandardIndexes.TEXT_ID)) {
         prepareIndexReader(segmentReader, indexType, fieldIndexConfigs, metadata);
-      } else if (IndexLoadingConfig.processExistingSegments(columnName, columnProperties)) {
+      } else if (IndexLoadingConfig.processExistingSegments(columnName, columnProperties) || hasIndexFor) {
         prepareIndexReader(segmentReader, indexType, fieldIndexConfigs, metadata);
       } else {
         LOGGER.info("skipping index reader for segmentDir: {} for column: {} with skipExistingSegments.",

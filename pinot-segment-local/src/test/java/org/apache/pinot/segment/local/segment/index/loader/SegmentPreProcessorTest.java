@@ -769,10 +769,12 @@ public class SegmentPreProcessorTest {
     Set<String> textIndexColumns = new HashSet<>();
     textIndexColumns.add(EXISTING_STRING_COL_RAW);
     _indexLoadingConfig.setTextIndexColumns(textIndexColumns);
-    Map<String, Map<String, String>> columnProperties = _indexLoadingConfig.getColumnProperties();
+
+    Map<String, Map<String, String>> columnProperties = new HashMap<>(_indexLoadingConfig.getColumnProperties());
     Map<String, String> properties = new HashMap<>();
     properties.put("skipExistingSegments", "true");
     columnProperties.put(EXISTING_STRING_COL_RAW, properties);
+    _indexLoadingConfig.setColumnProperties(columnProperties);
 
     // Create a segment in V3, enable text index on existing column
     constructV3Segment();
