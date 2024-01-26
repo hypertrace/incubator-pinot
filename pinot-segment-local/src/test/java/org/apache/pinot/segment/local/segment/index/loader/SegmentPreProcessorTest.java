@@ -20,22 +20,6 @@ package org.apache.pinot.segment.local.segment.index.loader;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
-import java.io.File;
-import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.attribute.FileTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.Consumer;
-
-import io.netty.util.internal.shaded.org.jctools.queues.MpscArrayQueue;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.apache.pinot.segment.local.segment.creator.SegmentTestUtils;
@@ -63,7 +47,13 @@ import org.apache.pinot.segment.spi.loader.SegmentDirectoryLoaderRegistry;
 import org.apache.pinot.segment.spi.store.SegmentDirectory;
 import org.apache.pinot.segment.spi.store.SegmentDirectoryPaths;
 import org.apache.pinot.segment.spi.utils.SegmentMetadataUtils;
-import org.apache.pinot.spi.config.table.*;
+import org.apache.pinot.spi.config.table.BloomFilterConfig;
+import org.apache.pinot.spi.config.table.FieldConfig;
+import org.apache.pinot.spi.config.table.IndexConfig;
+import org.apache.pinot.spi.config.table.IndexingConfig;
+import org.apache.pinot.spi.config.table.StarTreeIndexConfig;
+import org.apache.pinot.spi.config.table.TableConfig;
+import org.apache.pinot.spi.config.table.TableType;
 import org.apache.pinot.spi.config.table.ingestion.IngestionConfig;
 import org.apache.pinot.spi.config.table.ingestion.TransformConfig;
 import org.apache.pinot.spi.data.DimensionFieldSpec;
@@ -79,6 +69,21 @@ import org.testng.Assert;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
+
+import java.io.File;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.attribute.FileTime;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Consumer;
 
 import static org.apache.pinot.spi.config.table.FieldConfig.IndexType.TEXT;
 import static org.testng.Assert.*;
@@ -233,7 +238,7 @@ public class SegmentPreProcessorTest {
   }
 
   private void constructV1Segment(List<String> invertedIndexCols, List<String> textIndexCols,
-      List<String> rangeIndexCols, List<String> forwardIndexDisabledCols)
+                                  List<String> rangeIndexCols, List<String> forwardIndexDisabledCols)
       throws Exception {
     FileUtils.deleteQuietly(INDEX_DIR);
 
