@@ -467,7 +467,7 @@ public class IndexLoadingConfig {
    *      "name":"text_col_1",
    *      "encodingType":"RAW",
    *      "indexTypes": ["TEXT"],
-   *      "properties":{"fstType":"native", "skipExistingSegments":"true"}
+   *      "properties":{"fstType":"lucene", "skipExistingSegments":"true"}
    *   }
    *  ]
    * */

@@ -34,6 +34,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
+
+import io.netty.util.internal.shaded.org.jctools.queues.MpscArrayQueue;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.apache.pinot.segment.local.segment.creator.SegmentTestUtils;
@@ -61,12 +63,7 @@ import org.apache.pinot.segment.spi.loader.SegmentDirectoryLoaderRegistry;
 import org.apache.pinot.segment.spi.store.SegmentDirectory;
 import org.apache.pinot.segment.spi.store.SegmentDirectoryPaths;
 import org.apache.pinot.segment.spi.utils.SegmentMetadataUtils;
-import org.apache.pinot.spi.config.table.BloomFilterConfig;
-import org.apache.pinot.spi.config.table.IndexConfig;
-import org.apache.pinot.spi.config.table.IndexingConfig;
-import org.apache.pinot.spi.config.table.StarTreeIndexConfig;
-import org.apache.pinot.spi.config.table.TableConfig;
-import org.apache.pinot.spi.config.table.TableType;
+import org.apache.pinot.spi.config.table.*;
 import org.apache.pinot.spi.config.table.ingestion.IngestionConfig;
 import org.apache.pinot.spi.config.table.ingestion.TransformConfig;
 import org.apache.pinot.spi.data.DimensionFieldSpec;
@@ -83,6 +80,7 @@ import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
+import static org.apache.pinot.spi.config.table.FieldConfig.IndexType.TEXT;
 import static org.testng.Assert.*;
 
 
@@ -770,14 +768,21 @@ public class SegmentPreProcessorTest {
     textIndexColumns.add(EXISTING_STRING_COL_RAW);
     _indexLoadingConfig.setTextIndexColumns(textIndexColumns);
 
+    FieldConfig fieldConfig = new FieldConfig(EXISTING_STRING_COL_RAW, FieldConfig.EncodingType.RAW, TEXT,
+            null, null, null,
+            Map.of("skipExistingSegments", "true"));
+    _tableConfig.setFieldConfigList(List.of(fieldConfig));
+
     Map<String, Map<String, String>> columnProperties = new HashMap<>(_indexLoadingConfig.getColumnProperties());
     Map<String, String> properties = new HashMap<>();
     properties.put("skipExistingSegments", "true");
     columnProperties.put(EXISTING_STRING_COL_RAW, properties);
     _indexLoadingConfig.setColumnProperties(columnProperties);
+    _indexLoadingConfig.setTableConfig(_tableConfig);
 
     // Create a segment in V3, enable text index on existing column
-    constructV3Segment();
+    constructV1Segment(Collections.emptyList(), Collections.emptyList(), Collections.emptyList(),
+            Collections.emptyList());
     SegmentMetadataImpl segmentMetadata = new SegmentMetadataImpl(_indexDir);
     ColumnMetadata columnMetadata = segmentMetadata.getColumnMetadataFor(EXISTING_STRING_COL_RAW);
     assertNotNull(columnMetadata);
