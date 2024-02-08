@@ -36,15 +36,10 @@
  */
 package org.apache.pinot.segment.local.segment.index.loader.invertedindex;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import javax.annotation.Nullable;
 import org.apache.pinot.segment.local.segment.index.dictionary.DictionaryIndexType;
 import org.apache.pinot.segment.local.segment.index.forward.ForwardIndexType;
 import org.apache.pinot.segment.local.segment.index.loader.BaseIndexHandler;
+import org.apache.pinot.segment.local.segment.index.loader.IndexLoadingConfig;
 import org.apache.pinot.segment.local.segment.index.loader.SegmentPreProcessor;
 import org.apache.pinot.segment.spi.ColumnMetadata;
 import org.apache.pinot.segment.spi.creator.IndexCreationContext;
@@ -58,10 +53,20 @@ import org.apache.pinot.segment.spi.index.reader.ForwardIndexReader;
 import org.apache.pinot.segment.spi.index.reader.ForwardIndexReaderContext;
 import org.apache.pinot.segment.spi.store.SegmentDirectory;
 import org.apache.pinot.segment.spi.store.SegmentDirectoryPaths;
+import org.apache.pinot.spi.config.table.FieldConfig;
 import org.apache.pinot.spi.config.table.TableConfig;
 import org.apache.pinot.spi.data.FieldSpec.DataType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.annotation.Nullable;
+import java.io.File;
+import java.io.IOException;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.HashMap;
+import java.util.List;
 
 
 /**
@@ -86,14 +91,28 @@ import org.slf4j.LoggerFactory;
 public class TextIndexHandler extends BaseIndexHandler {
   private static final Logger LOGGER = LoggerFactory.getLogger(TextIndexHandler.class);
 
+  private static final String SKIP_EXISTING_SEGMENTS = "skipExistingSegments";
+
   private final Set<String> _columnsToAddIdx;
+  private Map<String, Map<String, String>> _columnProperties = new HashMap<>();
 
   public TextIndexHandler(SegmentDirectory segmentDirectory, Map<String, FieldIndexConfigs> fieldIndexConfigs,
       @Nullable TableConfig tableConfig) {
     super(segmentDirectory, fieldIndexConfigs, tableConfig);
     _columnsToAddIdx = FieldIndexConfigsUtil.columnsWithIndexEnabled(StandardIndexes.text(), _fieldIndexConfigs);
+    prepareColumnProperties(tableConfig);
   }
 
+  private void prepareColumnProperties(@Nullable TableConfig tableConfig) {
+    if (tableConfig != null) {
+      List<FieldConfig> fieldConfigList = tableConfig.getFieldConfigList();
+      if (fieldConfigList != null) {
+        for (FieldConfig fieldConfig : fieldConfigList) {
+          _columnProperties.put(fieldConfig.getName(), fieldConfig.getProperties());
+        }
+      }
+    }
+  }
   @Override
   public boolean needUpdateIndices(SegmentDirectory.Reader segmentReader) {
     String segmentName = _segmentDirectory.getSegmentMetadata().getName();
@@ -134,7 +153,10 @@ public class TextIndexHandler extends BaseIndexHandler {
     for (String column : columnsToAddIdx) {
       ColumnMetadata columnMetadata = _segmentDirectory.getSegmentMetadata().getColumnMetadataFor(column);
       if (shouldCreateTextIndex(columnMetadata)) {
+        LOGGER.info("Creating text index from segment: {}, column: {}", segmentName, column);
         createTextIndexForColumn(segmentWriter, columnMetadata);
+      } else {
+        LOGGER.info("Skipping creation of text index from segment: {}, column: {}", segmentName, column);
       }
     }
   }
@@ -143,7 +165,9 @@ public class TextIndexHandler extends BaseIndexHandler {
     if (columnMetadata != null) {
       // Fail fast upon unsupported operations.
       checkUnsupportedOperationsForTextIndex(columnMetadata);
-      return true;
+
+      // skip creating text index if SKIP_EXISTING_SEGMENTS is set to true.
+      return IndexLoadingConfig.processExistingSegments(columnMetadata.getColumnName(), _columnProperties);
     }
     return false;
   }

@@ -66,6 +66,7 @@ import org.apache.pinot.segment.spi.store.SegmentDirectoryPaths;
 import org.apache.pinot.segment.spi.utils.SegmentMetadataUtils;
 import org.apache.pinot.spi.config.table.BloomFilterConfig;
 import org.apache.pinot.spi.config.table.FieldConfig.CompressionCodec;
+import org.apache.pinot.spi.config.table.FieldConfig;
 import org.apache.pinot.spi.config.table.IndexConfig;
 import org.apache.pinot.spi.config.table.IndexingConfig;
 import org.apache.pinot.spi.config.table.StarTreeIndexConfig;
@@ -87,6 +88,7 @@ import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
+import static org.apache.pinot.spi.config.table.FieldConfig.IndexType.TEXT;
 import static org.testng.Assert.*;
 
 
@@ -240,7 +242,7 @@ public class SegmentPreProcessorTest {
   }
 
   private void constructV1Segment(List<String> invertedIndexCols, List<String> textIndexCols,
-      List<String> rangeIndexCols, List<String> forwardIndexDisabledCols)
+                                  List<String> rangeIndexCols, List<String> forwardIndexDisabledCols)
       throws Exception {
     FileUtils.deleteQuietly(INDEX_DIR);
 
@@ -760,6 +762,46 @@ public class SegmentPreProcessorTest {
     checkTextIndexCreation(NEWLY_ADDED_STRING_COL_DICT, 1, 1, _newColumnsSchemaWithText, true, true, true, 4);
   }
 
+  /**
+   * Test to check if text index creation skipped if SKIP_EXISTING_SEGMENTS set to true
+   * @throws Exception
+   */
+  @Test
+  public void testSkipTextIndexCreationOnExistingSegmentForRawColumn()
+          throws Exception {
+    Set<String> textIndexColumns = new HashSet<>();
+    textIndexColumns.add(EXISTING_STRING_COL_RAW);
+    _indexLoadingConfig.setTextIndexColumns(textIndexColumns);
+
+    FieldConfig fieldConfig = new FieldConfig(EXISTING_STRING_COL_RAW, FieldConfig.EncodingType.RAW, TEXT,
+            null, null, null,
+            Map.of("skipExistingSegments", "true"));
+    _tableConfig.setFieldConfigList(List.of(fieldConfig));
+
+    Map<String, Map<String, String>> columnProperties = new HashMap<>(_indexLoadingConfig.getColumnProperties());
+    Map<String, String> properties = new HashMap<>();
+    properties.put("skipExistingSegments", "true");
+    columnProperties.put(EXISTING_STRING_COL_RAW, properties);
+    _indexLoadingConfig.setColumnProperties(columnProperties);
+    _indexLoadingConfig.setTableConfig(_tableConfig);
+
+    // Create a segment in V3, enable text index on existing column
+    constructV1Segment(Collections.emptyList(), Collections.emptyList(), Collections.emptyList(),
+            Collections.emptyList());
+    SegmentMetadataImpl segmentMetadata = new SegmentMetadataImpl(_indexDir);
+    ColumnMetadata columnMetadata = segmentMetadata.getColumnMetadataFor(EXISTING_STRING_COL_RAW);
+    assertNotNull(columnMetadata);
+
+    try (SegmentDirectory segmentDirectory = SegmentDirectoryLoaderRegistry.getDefaultSegmentDirectoryLoader()
+            .load(_indexDir.toURI(),
+                    new SegmentDirectoryLoaderContext.Builder().setSegmentDirectoryConfigs(_configuration).build());
+         SegmentPreProcessor processor = new SegmentPreProcessor(segmentDirectory, _indexLoadingConfig, _schema)) {
+      processor.process();
+      try (SegmentDirectory.Reader reader = segmentDirectory.createReader()) {
+        assertFalse(reader.hasIndexFor(EXISTING_STRING_COL_RAW, StandardIndexes.text()));
+      }
+    }
+  }
   /**
    * Test to check text index creation during segment load after text index
    * creation is enabled on an existing raw column.
