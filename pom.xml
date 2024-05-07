@@ -181,11 +181,11 @@
     <surefire.version>3.1.2</surefire.version>
 
     <!-- Configuration for Scala -->
-    <scala.version>2.12.18</scala.version>
+    <scala.version>2.13.13</scala.version>
     <scala.compat.version>2.12</scala.compat.version>
 
     <!-- Configuration for Scala -->
-    <scala.version>2.12.18</scala.version>
+    <scala.version>2.13.13</scala.version>
     <scala.compat.version>2.12</scala.compat.version>
 
     <flink.version>1.12.0</flink.version>
@@ -244,7 +244,7 @@
         <activeByDefault>false</activeByDefault>
       </activation>
       <properties>
-        <scala.version>2.13.3</scala.version>
+        <scala.version>2.13.13</scala.version>
         <scala.compat.version>2.13</scala.compat.version>
       </properties>
     </profile>
