@@ -222,11 +222,16 @@ public class PinotSegmentRecordReader implements RecordReader {
   public void getRecord(int docId, GenericRow buffer) {
     for (Map.Entry<String, PinotSegmentColumnReader> entry : _columnReaderMap.entrySet()) {
       String column = entry.getKey();
-      PinotSegmentColumnReader columnReader = entry.getValue();
-      if (!columnReader.isNull(docId)) {
-        buffer.putValue(column, columnReader.getValue(docId));
-      } else if (!_skipDefaultNullValues) {
-        buffer.putDefaultNullValue(column, columnReader.getValue(docId));
+      try {
+        PinotSegmentColumnReader columnReader = entry.getValue();
+        if (!columnReader.isNull(docId)) {
+          buffer.putValue(column, columnReader.getValue(docId));
+        } else if (!_skipDefaultNullValues) {
+          buffer.putDefaultNullValue(column, columnReader.getValue(docId));
+        }
+      } catch (Exception e) {
+        LOGGER.error("Failed on reading data for column:{}, docId:{} with an exception", column, docId, e);
+        throw e;
       }
     }
   }
