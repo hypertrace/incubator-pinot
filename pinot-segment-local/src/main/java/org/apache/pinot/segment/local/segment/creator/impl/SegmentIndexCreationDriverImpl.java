@@ -228,13 +228,8 @@ public class SegmentIndexCreationDriverImpl implements SegmentIndexCreationDrive
           recordReadStopTime = System.currentTimeMillis();
           _totalRecordReadTime += (recordReadStopTime - recordReadStartTime);
         } catch (Exception e) {
-          if (!_continueOnError) {
-            throw new RuntimeException("Error occurred while reading row during indexing", e);
-          } else {
             incompleteRowsFound++;
-            LOGGER.debug("Error occurred while reading row during indexing", e);
-            continue;
-          }
+            LOGGER.error("Error occurred while reading row during indexing", e);
         }
 
         for (GenericRow row : reusedResult.getTransformedRows()) {
