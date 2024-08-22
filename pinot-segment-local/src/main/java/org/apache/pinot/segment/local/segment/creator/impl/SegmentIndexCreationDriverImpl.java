@@ -230,6 +230,7 @@ public class SegmentIndexCreationDriverImpl implements SegmentIndexCreationDrive
         } catch (Exception e) {
             incompleteRowsFound++;
             LOGGER.error("Error occurred while reading row during indexing", e);
+            continue;
         }
 
         for (GenericRow row : reusedResult.getTransformedRows()) {
