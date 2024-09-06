@@ -97,12 +97,4 @@ public class ChunkReaderContext implements ForwardIndexReaderContext {
   public void setRanges(List<ForwardIndexReader.ByteRange> ranges) {
     _ranges = ranges;
   }
-
-  @Override
-  public void close()
-      throws IOException {
-    if (CleanerUtil.UNMAP_SUPPORTED && _chunkBuffer.isDirect()) {
-      CleanerUtil.getCleaner().freeBuffer(_chunkBuffer);
-    }
-  }
 }
