@@ -45,7 +45,7 @@ import org.slf4j.LoggerFactory;
  */
 public class PinotFSSegmentUploader implements SegmentUploader {
   private static final Logger LOGGER = LoggerFactory.getLogger(PinotFSSegmentUploader.class);
-  public static final int DEFAULT_SEGMENT_UPLOAD_TIMEOUT_MILLIS = 60 * 1000;
+  public static final int DEFAULT_SEGMENT_UPLOAD_TIMEOUT_MILLIS = 10 * 1000;
 
   private final String _segmentStoreUriStr;
   private final ExecutorService _executorService = Executors.newCachedThreadPool();
