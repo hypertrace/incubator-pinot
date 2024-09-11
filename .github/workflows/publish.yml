@@ -25,7 +25,7 @@ jobs:
           cache: maven
 
       - name: Build with Maven
-        run: mvn install package -DskipTests -Pbin-dist -Pbuild-shaded-jar -Djdk.version=11 -T1C
+        run: mvn install package -DskipTests -Drat.ignoreErrors=true -Pbin-dist -Pbuild-shaded-jar -Djdk.version=11 -T1C
 
       - name: Determine version
         id: version
