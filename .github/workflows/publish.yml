@@ -39,7 +39,7 @@ jobs:
           echo "$version"
           echo version="$version" >> $GITHUB_OUTPUT
 
-      - name: Collect shaded jars
+      - name: Collect jars
         run: |
           echo ${{ steps.version.outputs.version }}
           find . -name '*.jar'
