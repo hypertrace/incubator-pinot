@@ -29,10 +29,24 @@ jobs:
 
       - name: Determine version
         id: version
-        run: echo version=$(git describe --abbrev=0 --tags) >> $GITHUB_OUTPUT
+        run: |
+          LAST_TAG=$(git describe --abbrev=0 --tags)
+          if [ "$LAST_TAG" = $(git describe --tag) ]; then
+            version="$LAST_TAG"
+          else
+            version="${LAST_TAG}-SNAPSHOT"
+          fi
+          echo "$version"
+          echo version="$version" >> $GITHUB_OUTPUT
 
       - name: Collect shaded jars
-        run: echo ${{ steps.version.outputs.version }} && find . -name '*.jar' && mkdir pinot-${{ steps.version.outputs.version }} && cp target/*-shaded.jar pinot-${{ steps.version.outputs.version }}
+        run: |
+          echo ${{ steps.version.outputs.version }}
+          find . -name '*.jar'
+          mkdir pinot-${{ steps.version.outputs.version }}
+          cp build/*.jar pinot-${{ steps.version.outputs.version }} || true
+          cp pinot-distribution/target/*.jar pinot-${{ steps.version.outputs.version }} || true
+          cp -r ./pinot-distribution/target/apache-pinot-1.2.0-bin/apache-pinot-1.2.0-bin/* pinot-${{ steps.version.outputs.version }} || true
 
       - name: Upload Packages
         uses: actions/upload-artifact@v4
