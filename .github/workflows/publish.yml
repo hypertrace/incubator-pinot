@@ -44,9 +44,11 @@ jobs:
           echo ${{ steps.version.outputs.version }}
           find . -name '*.jar'
           mkdir pinot-${{ steps.version.outputs.version }}
+          mkdir pinot-${{ steps.version.outputs.version }}/jars
+          mkdir pinot-${{ steps.version.outputs.version }}/distribution
           echo
-          cp pinot-distribution/target/*.jar pinot-${{ steps.version.outputs.version }}
-          cp -r ./pinot-distribution/target/apache-pinot-1.2.0-bin/apache-pinot-1.2.0-bin/* pinot-${{ steps.version.outputs.version }}
+          cp pinot-distribution/target/*.jar pinot-${{ steps.version.outputs.version }}/jars
+          cp -r ./pinot-distribution/target/apache-pinot-1.2.0-bin/apache-pinot-1.2.0-bin/* pinot-${{ steps.version.outputs.version }}/distribution
           tar cvfz pinot-${{ steps.version.outputs.version }}.tar.gz pinot-${{ steps.version.outputs.version }}
 
       - name: Upload Packages
