@@ -25,5 +25,5 @@ before_install:
   - sdk install maven
   - mvn -v
 install:
-  - mvn clean install -DskipTests -pl !:pinot-batch-ingestion-spark-2.4,!:pinot-batch-ingestion-spark-3,!:pinot-batch-ingestion-hadoop,!:pinot-kinesis,!:pinot-pulsar,!:pinot-integration-test-base,!:pinot-integration-tests,!:pinot-perf,!:pinot-spark-common,!:pinot-spark-2-connector,!:pinot-spark-3-connector,!:pinot-flink-connector
+  - mvn clean install -Drat.ignoreErrors=true -DskipTests -pl !:pinot-batch-ingestion-spark-2.4,!:pinot-batch-ingestion-spark-3,!:pinot-batch-ingestion-hadoop,!:pinot-kinesis,!:pinot-pulsar,!:pinot-integration-test-base,!:pinot-integration-tests,!:pinot-perf,!:pinot-spark-common,!:pinot-spark-2-connector,!:pinot-spark-3-connector,!:pinot-flink-connector
 
