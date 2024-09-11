@@ -44,12 +44,13 @@ jobs:
           echo ${{ steps.version.outputs.version }}
           find . -name '*.jar'
           mkdir pinot-${{ steps.version.outputs.version }}
-          cp build/*.jar pinot-${{ steps.version.outputs.version }} || true
-          cp pinot-distribution/target/*.jar pinot-${{ steps.version.outputs.version }} || true
-          cp -r ./pinot-distribution/target/apache-pinot-1.2.0-bin/apache-pinot-1.2.0-bin/* pinot-${{ steps.version.outputs.version }} || true
+          echo
+          cp pinot-distribution/target/*.jar pinot-${{ steps.version.outputs.version }}
+          cp -r ./pinot-distribution/target/apache-pinot-1.2.0-bin/apache-pinot-1.2.0-bin/* pinot-${{ steps.version.outputs.version }}
+          tar cvfz pinot-${{ steps.version.outputs.version }}.tar.gz pinot-${{ steps.version.outputs.version }}
 
       - name: Upload Packages
         uses: actions/upload-artifact@v4
         with:
           name: Package
-          path: pinot-${{ steps.version.outputs.version }}
+          path: pinot-${{ steps.version.outputs.version }}.tar.gz
