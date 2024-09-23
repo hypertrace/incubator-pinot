@@ -86,11 +86,23 @@
         </exclusion>
         <exclusion>
           <groupId>org.apache.pinot</groupId>
+          <artifactId>pinot-orc</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.pinot</groupId>
+          <artifactId>pinot-parquet</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.pinot</groupId>
           <artifactId>pinot-kafka-base</artifactId>
         </exclusion>
         <exclusion>
           <groupId>org.apache.pinot</groupId>
           <artifactId>pinot-kafka-2.0</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.pinot</groupId>
+          <artifactId>pinot-hdfs</artifactId>
         </exclusion>
         <exclusion>
           <groupId>org.apache.pinot</groupId>
