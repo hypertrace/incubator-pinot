@@ -35,6 +35,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.function.Supplier;
 import javax.annotation.Nullable;
+
+import com.google.common.collect.Sets;
 import org.apache.commons.io.FileUtils;
 import org.apache.helix.HelixManager;
 import org.apache.helix.store.zk.ZkHelixPropertyStore;
@@ -48,12 +50,18 @@ import org.apache.pinot.core.realtime.impl.fakestream.FakeStreamConfigUtils;
 import org.apache.pinot.core.realtime.impl.fakestream.FakeStreamConsumerFactory;
 import org.apache.pinot.core.realtime.impl.fakestream.FakeStreamMessageDecoder;
 import org.apache.pinot.segment.local.data.manager.TableDataManager;
+import org.apache.pinot.segment.local.indexsegment.mutable.MutableSegmentImpl;
+import org.apache.pinot.segment.local.io.writer.impl.DirectMemoryManager;
+import org.apache.pinot.segment.local.realtime.impl.RealtimeSegmentConfig;
 import org.apache.pinot.segment.local.realtime.impl.RealtimeSegmentStatsHistory;
 import org.apache.pinot.segment.local.segment.creator.Fixtures;
 import org.apache.pinot.segment.local.segment.index.loader.IndexLoadingConfig;
 import org.apache.pinot.segment.local.utils.SegmentLocks;
+import org.apache.pinot.segment.spi.index.StandardIndexes;
 import org.apache.pinot.spi.config.instance.InstanceDataManagerConfig;
+import org.apache.pinot.spi.config.table.IndexConfig;
 import org.apache.pinot.spi.config.table.TableConfig;
+import org.apache.pinot.spi.data.FieldSpec;
 import org.apache.pinot.spi.data.Schema;
 import org.apache.pinot.spi.env.PinotConfiguration;
 import org.apache.pinot.spi.metrics.PinotMetricUtils;
@@ -92,6 +100,8 @@ public class RealtimeSegmentDataManagerTest {
   private static final LongMsgOffset START_OFFSET = new LongMsgOffset(START_OFFSET_VALUE);
 
   private final Map<Integer, Semaphore> _partitionGroupIdToSemaphoreMap = new ConcurrentHashMap<>();
+  private static final File TMP_DIR =
+    new File(FileUtils.getTempDirectory(), RealtimeSegmentDataManagerTest.class.getName());
 
   private static TableConfig createTableConfig()
       throws Exception {
@@ -227,6 +237,7 @@ public class RealtimeSegmentDataManagerTest {
     Assert.assertFalse(segmentDataManager._buildAndReplaceCalled);
     Assert.assertFalse(segmentDataManager._downloadAndReplaceCalled);
     Assert.assertTrue(segmentDataManager._commitSegmentCalled);
+    Assert.assertTrue(segmentDataManager._consumingSegment._destroyCalled);
     Assert.assertEquals(segmentDataManager._state.get(segmentDataManager), RealtimeSegmentDataManager.State.COMMITTED);
     segmentDataManager.close();
   }
@@ -247,6 +258,7 @@ public class RealtimeSegmentDataManagerTest {
 
     consumer.run();
     Assert.assertTrue(segmentDataManager._buildSegmentCalled);
+    Assert.assertFalse(segmentDataManager._consumingSegment._destroyCalled);
     Assert.assertEquals(segmentDataManager._state.get(segmentDataManager), RealtimeSegmentDataManager.State.ERROR);
     segmentDataManager.close();
   }
@@ -290,6 +302,7 @@ public class RealtimeSegmentDataManagerTest {
     Assert.assertFalse(segmentDataManager._buildAndReplaceCalled);
     Assert.assertFalse(segmentDataManager._downloadAndReplaceCalled);
     Assert.assertTrue(segmentDataManager._commitSegmentCalled);
+    Assert.assertTrue(segmentDataManager._consumingSegment._destroyCalled);
     Assert.assertEquals(segmentDataManager._state.get(segmentDataManager), RealtimeSegmentDataManager.State.COMMITTED);
     segmentDataManager.close();
   }
@@ -337,6 +350,7 @@ public class RealtimeSegmentDataManagerTest {
     Assert.assertFalse(segmentDataManager._buildAndReplaceCalled);
     Assert.assertFalse(segmentDataManager._downloadAndReplaceCalled);
     Assert.assertTrue(segmentDataManager._commitSegmentCalled);
+    Assert.assertTrue(segmentDataManager._consumingSegment._destroyCalled);
     Assert.assertEquals(segmentDataManager._state.get(segmentDataManager), RealtimeSegmentDataManager.State.COMMITTED);
     segmentDataManager.close();
   }
@@ -384,6 +398,7 @@ public class RealtimeSegmentDataManagerTest {
     Assert.assertFalse(segmentDataManager._buildAndReplaceCalled);
     Assert.assertFalse(segmentDataManager._downloadAndReplaceCalled);
     Assert.assertTrue(segmentDataManager._commitSegmentCalled);
+    Assert.assertTrue(segmentDataManager._consumingSegment._destroyCalled);
     Assert.assertEquals(segmentDataManager._state.get(segmentDataManager), RealtimeSegmentDataManager.State.COMMITTED);
     segmentDataManager.close();
   }
@@ -408,6 +423,7 @@ public class RealtimeSegmentDataManagerTest {
     Assert.assertFalse(segmentDataManager._buildAndReplaceCalled);
     Assert.assertFalse(segmentDataManager._downloadAndReplaceCalled);
     Assert.assertFalse(segmentDataManager._commitSegmentCalled);
+    Assert.assertFalse(segmentDataManager._consumingSegment._destroyCalled);
     Assert.assertEquals(segmentDataManager._state.get(segmentDataManager), RealtimeSegmentDataManager.State.DISCARDED);
     segmentDataManager.close();
   }
@@ -432,6 +448,7 @@ public class RealtimeSegmentDataManagerTest {
     Assert.assertFalse(segmentDataManager._buildSegmentCalled);
     Assert.assertFalse(segmentDataManager._downloadAndReplaceCalled);
     Assert.assertTrue(segmentDataManager._buildAndReplaceCalled);
+    Assert.assertTrue(segmentDataManager._consumingSegment._destroyCalled);
     Assert.assertFalse(segmentDataManager._commitSegmentCalled);
     Assert.assertEquals(segmentDataManager._state.get(segmentDataManager), RealtimeSegmentDataManager.State.RETAINED);
     segmentDataManager.close();
@@ -461,6 +478,7 @@ public class RealtimeSegmentDataManagerTest {
     Assert.assertFalse(segmentDataManager._buildSegmentCalled);
     Assert.assertFalse(segmentDataManager._commitSegmentCalled);
     Assert.assertFalse(segmentDataManager._downloadAndReplaceCalled);
+    Assert.assertFalse(segmentDataManager._consumingSegment._destroyCalled);
     Assert.assertEquals(segmentDataManager._state.get(segmentDataManager), RealtimeSegmentDataManager.State.HOLDING);
     segmentDataManager.close();
   }
@@ -496,6 +514,7 @@ public class RealtimeSegmentDataManagerTest {
       segmentDataManager.goOnlineFromConsuming(metadata);
       Assert.assertFalse(segmentDataManager._downloadAndReplaceCalled);
       Assert.assertFalse(segmentDataManager._buildAndReplaceCalled);
+      Assert.assertFalse(segmentDataManager._consumingSegment._destroyCalled);
     }
 
     try (FakeRealtimeSegmentDataManager segmentDataManager = createFakeSegmentManager()) {
@@ -504,6 +523,7 @@ public class RealtimeSegmentDataManagerTest {
       segmentDataManager.goOnlineFromConsuming(metadata);
       Assert.assertFalse(segmentDataManager._downloadAndReplaceCalled);
       Assert.assertFalse(segmentDataManager._buildAndReplaceCalled);
+      Assert.assertFalse(segmentDataManager._consumingSegment._destroyCalled);
     }
 
     try (FakeRealtimeSegmentDataManager segmentDataManager = createFakeSegmentManager()) {
@@ -512,6 +532,7 @@ public class RealtimeSegmentDataManagerTest {
       segmentDataManager.goOnlineFromConsuming(metadata);
       Assert.assertTrue(segmentDataManager._downloadAndReplaceCalled);
       Assert.assertFalse(segmentDataManager._buildAndReplaceCalled);
+      Assert.assertTrue(segmentDataManager._consumingSegment._destroyCalled);
     }
 
     try (FakeRealtimeSegmentDataManager segmentDataManager = createFakeSegmentManager()) {
@@ -520,6 +541,7 @@ public class RealtimeSegmentDataManagerTest {
       segmentDataManager.goOnlineFromConsuming(metadata);
       Assert.assertTrue(segmentDataManager._downloadAndReplaceCalled);
       Assert.assertFalse(segmentDataManager._buildAndReplaceCalled);
+      Assert.assertTrue(segmentDataManager._consumingSegment._destroyCalled);
     }
 
     // If holding, but we have overshot the expected final offset, the download and replace
@@ -530,6 +552,7 @@ public class RealtimeSegmentDataManagerTest {
       segmentDataManager.goOnlineFromConsuming(metadata);
       Assert.assertTrue(segmentDataManager._downloadAndReplaceCalled);
       Assert.assertFalse(segmentDataManager._buildAndReplaceCalled);
+      Assert.assertTrue(segmentDataManager._consumingSegment._destroyCalled);
     }
 
     // If catching up, but we have overshot the expected final offset, the download and replace
@@ -540,6 +563,7 @@ public class RealtimeSegmentDataManagerTest {
       segmentDataManager.goOnlineFromConsuming(metadata);
       Assert.assertTrue(segmentDataManager._downloadAndReplaceCalled);
       Assert.assertFalse(segmentDataManager._buildAndReplaceCalled);
+      Assert.assertTrue(segmentDataManager._consumingSegment._destroyCalled);
     }
 
     // If catching up, but we did not get to the final offset, then download and replace
@@ -550,6 +574,7 @@ public class RealtimeSegmentDataManagerTest {
       segmentDataManager.goOnlineFromConsuming(metadata);
       Assert.assertTrue(segmentDataManager._downloadAndReplaceCalled);
       Assert.assertFalse(segmentDataManager._buildAndReplaceCalled);
+      Assert.assertTrue(segmentDataManager._consumingSegment._destroyCalled);
     }
 
     // But then if we get to the exact offset, we get to build and replace, not download
@@ -560,6 +585,7 @@ public class RealtimeSegmentDataManagerTest {
       segmentDataManager.goOnlineFromConsuming(metadata);
       Assert.assertFalse(segmentDataManager._downloadAndReplaceCalled);
       Assert.assertTrue(segmentDataManager._buildAndReplaceCalled);
+      Assert.assertTrue(segmentDataManager._consumingSegment._destroyCalled);
     }
   }
 
@@ -905,6 +931,7 @@ public class RealtimeSegmentDataManagerTest {
     public boolean _postConsumeStoppedCalled = false;
     public Map<Integer, Semaphore> _semaphoreMap;
     public boolean _stubConsumeLoop = true;
+    public FakeMutableSegmentImpl _consumingSegment;
     private TimeSupplier _timeSupplier;
 
     private static InstanceDataManagerConfig makeInstanceDataManagerConfig() {
@@ -936,6 +963,7 @@ public class RealtimeSegmentDataManagerTest {
       _streamMsgOffsetFactory.setAccessible(true);
       _streamMsgOffsetFactory.set(this, new LongMsgOffsetFactory());
       _timeSupplier = timeSupplier;
+      _consumingSegment = new FakeMutableSegmentImpl(FakeMutableSegmentImpl.getRealtimeSegmentConfig());
     }
 
     public String getStopReason() {
@@ -1039,7 +1067,7 @@ public class RealtimeSegmentDataManagerTest {
         return null;
       }
       if (!forCommit) {
-        return new SegmentBuildDescriptor(null, null, getCurrentOffset(), 0, 0, -1);
+        return new SegmentBuildDescriptor(null, null, getCurrentOffset(), _consumingSegment, 0, 0, -1);
       }
       File segmentTarFile = new File(new File(TEMP_DIR, REALTIME_TABLE_NAME), "segmentFile");
       try {
@@ -1047,7 +1075,7 @@ public class RealtimeSegmentDataManagerTest {
       } catch (IOException e) {
         Assert.fail("Could not create file " + segmentTarFile);
       }
-      return new SegmentBuildDescriptor(segmentTarFile, null, getCurrentOffset(), 0, 0, -1);
+      return new SegmentBuildDescriptor(segmentTarFile, null, getCurrentOffset(), _consumingSegment,0, 0, -1);
     }
 
     @Override
@@ -1152,6 +1180,38 @@ public class RealtimeSegmentDataManagerTest {
     public void close() {
       offload();
       destroy();
+    }
+
+    static class FakeMutableSegmentImpl extends MutableSegmentImpl {
+      boolean _destroyCalled = false;
+
+      private FakeMutableSegmentImpl(RealtimeSegmentConfig config) throws IOException, ClassNotFoundException {
+        super(config, null);
+      }
+
+      private static SegmentZKMetadata getSegmentZKMetadata(String segmentName) {
+        SegmentZKMetadata segmentZKMetadata = new SegmentZKMetadata(segmentName);
+        segmentZKMetadata.setCreationTime(System.currentTimeMillis());
+        return segmentZKMetadata;
+      }
+
+      static RealtimeSegmentConfig getRealtimeSegmentConfig() throws IOException, ClassNotFoundException {
+        String segmentName = "testTable__0__0__123456";
+        File tmpDir = new File(TMP_DIR, "tmp_" + System.currentTimeMillis());
+        return
+          new RealtimeSegmentConfig.Builder().setTableNameWithType("fake_ONLINE").setSegmentName(segmentName)
+            .setStreamName("fake").setSchema(new Schema.SchemaBuilder().addSingleValueDimension("col", FieldSpec.DataType.STRING).build())
+            .setIndex(Sets.newHashSet("col"), StandardIndexes.inverted(), IndexConfig.ENABLED)
+            .setSegmentZKMetadata(getSegmentZKMetadata(segmentName)).setOffHeap(true)
+            .setMemoryManager(new DirectMemoryManager(segmentName))
+            .setStatsHistory(RealtimeSegmentStatsHistory.deserialzeFrom(new File(tmpDir, "stats")))
+            .setConsumerDir(new File(tmpDir, "consumerDir").getAbsolutePath()).build();
+      }
+
+      @Override
+      public void destroy() {
+        _destroyCalled = true;
+      }
     }
   }
 }
