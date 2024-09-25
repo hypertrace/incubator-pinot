@@ -178,15 +178,17 @@ public class RealtimeSegmentDataManager extends SegmentDataManager {
     final long _waitTimeMillis;
     final long _buildTimeMillis;
     final long _segmentSizeBytes;
+    final MutableSegmentImpl _mutableSegmentRef;
 
     public SegmentBuildDescriptor(@Nullable File segmentTarFile, @Nullable Map<String, File> metadataFileMap,
-        StreamPartitionMsgOffset offset, long buildTimeMillis, long waitTimeMillis, long segmentSizeBytes) {
+        StreamPartitionMsgOffset offset, MutableSegmentImpl mutableSegment, long buildTimeMillis, long waitTimeMillis, long segmentSizeBytes) {
       _segmentTarFile = segmentTarFile;
       _metadataFileMap = metadataFileMap;
       _offset = _streamPartitionMsgOffsetFactory.create(offset);
       _buildTimeMillis = buildTimeMillis;
       _waitTimeMillis = waitTimeMillis;
       _segmentSizeBytes = segmentSizeBytes;
+      _mutableSegmentRef = mutableSegment;
     }
 
     public StreamPartitionMsgOffset getOffset() {
@@ -219,6 +221,10 @@ public class RealtimeSegmentDataManager extends SegmentDataManager {
       if (_segmentTarFile != null) {
         FileUtils.deleteQuietly(_segmentTarFile);
       }
+    }
+
+    public void destroyConsumingSegment() {
+      _mutableSegmentRef.destroy();
     }
   }
 
@@ -1090,10 +1096,10 @@ public class RealtimeSegmentDataManager extends SegmentDataManager {
         metadataFiles.put(V1Constants.MetadataKeys.METADATA_FILE_NAME, metadataFile);
         metadataFiles.put(V1Constants.SEGMENT_CREATION_META, creationMetaFile);
 
-        return new SegmentBuildDescriptor(segmentTarFile, metadataFiles, _currentOffset, buildTimeMillis,
+        return new SegmentBuildDescriptor(segmentTarFile, metadataFiles, _currentOffset, _realtimeSegment, buildTimeMillis,
             waitTimeMillis, segmentSizeBytes);
       } else {
-        return new SegmentBuildDescriptor(null, null, _currentOffset, buildTimeMillis, waitTimeMillis,
+        return new SegmentBuildDescriptor(null, null, _currentOffset, _realtimeSegment, buildTimeMillis, waitTimeMillis,
             segmentSizeBytes);
       }
     } catch (InterruptedException e) {
@@ -1123,6 +1129,7 @@ public class RealtimeSegmentDataManager extends SegmentDataManager {
       return false;
     }
     _realtimeTableDataManager.replaceConsumingSegment(_segmentNameStr);
+    _segmentBuildDescriptor.destroyConsumingSegment();
     removeSegmentFile();
     return true;
   }
@@ -1157,6 +1164,7 @@ public class RealtimeSegmentDataManager extends SegmentDataManager {
       return false;
     }
     _realtimeTableDataManager.replaceConsumingSegment(_segmentNameStr);
+    descriptor.destroyConsumingSegment();
     return true;
   }
 
@@ -1349,6 +1357,7 @@ public class RealtimeSegmentDataManager extends SegmentDataManager {
       closeStreamConsumers();
     }
     _realtimeTableDataManager.downloadAndReplaceConsumingSegment(segmentZKMetadata);
+    _segmentBuildDescriptor.destroyConsumingSegment();
   }
 
   protected long now() {
