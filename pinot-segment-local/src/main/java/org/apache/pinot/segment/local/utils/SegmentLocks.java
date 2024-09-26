@@ -18,11 +18,17 @@
  */
 package org.apache.pinot.segment.local.utils;
 
+import org.apache.helix.manager.zk.ZKHelixManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 
 public class SegmentLocks {
+  private static final Logger LOG = LoggerFactory.getLogger(SegmentLocks.class);
   private static final int DEFAULT_NUM_LOCKS = 10000;
 
   private final Lock[] _locks;
@@ -32,7 +38,34 @@ public class SegmentLocks {
     _numLocks = numLocks;
     _locks = new Lock[numLocks];
     for (int i = 0; i < numLocks; i++) {
-      _locks[i] = new ReentrantLock();
+      _locks[i] = new ReentrantLock(true) {
+        private String owner;
+
+        @Override
+        public void lock() {
+          boolean acquired;
+          try {
+            acquired = tryLock(5, TimeUnit.SECONDS);
+            if(!acquired) {
+              LOG.warn("failed to acquire. lock: [{}], owner: [{}], holding count: {}", this, owner, getHoldCount());
+            }
+          } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+          }
+          super.lock();
+          owner = Thread.currentThread().getName();
+          LOG.debug("lock acquired. lock: [{}], owner: [{}], holding count: {}", this, owner, getHoldCount());
+        }
+
+        @Override
+        public void unlock() {
+          if(getHoldCount() == 1) {
+            owner = null;
+          }
+          super.unlock();
+          LOG.debug("lock released. lock: [{}], owner: [{}], holding count: {}", this, owner, getHoldCount());
+        }
+      };
     }
   }
 
