@@ -18,13 +18,11 @@
  */
 package org.apache.pinot.segment.local.utils;
 
-import org.apache.helix.manager.zk.ZKHelixManager;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 public class SegmentLocks {
@@ -38,34 +36,7 @@ public class SegmentLocks {
     _numLocks = numLocks;
     _locks = new Lock[numLocks];
     for (int i = 0; i < numLocks; i++) {
-      _locks[i] = new ReentrantLock(true) {
-        private String owner;
-
-        @Override
-        public void lock() {
-          boolean acquired;
-          try {
-            acquired = tryLock(5, TimeUnit.SECONDS);
-            if(!acquired) {
-              LOG.warn("failed to acquire. lock: [{}], owner: [{}], holding count: {}", this, owner, getHoldCount());
-            }
-          } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-          }
-          super.lock();
-          owner = Thread.currentThread().getName();
-          LOG.debug("lock acquired. lock: [{}], owner: [{}], holding count: {}", this, owner, getHoldCount());
-        }
-
-        @Override
-        public void unlock() {
-          if(getHoldCount() == 1) {
-            owner = null;
-          }
-          super.unlock();
-          LOG.debug("lock released. lock: [{}], owner: [{}], holding count: {}", this, owner, getHoldCount());
-        }
-      };
+      _locks[i] = new TrackableReentrantLock(true);
     }
   }
 
@@ -95,5 +66,62 @@ public class SegmentLocks {
   @Deprecated
   public static SegmentLocks create(int numLocks) {
     return new SegmentLocks(numLocks);
+  }
+
+  private static class TrackableReentrantLock extends ReentrantLock {
+    private volatile String owner;
+
+    public TrackableReentrantLock(boolean fair) {
+      super(fair);
+    }
+
+    @Override
+    public void lock() {
+      boolean acquired = tryLockingWithinLimitedTime();
+      // Lock only when lock is not acquired in first attempt
+      if(!acquired) {
+        super.lock();
+      }
+      owner = Thread.currentThread().getName();
+      LOG.debug("lock acquired. lock: [{}], owner: [{}], holding count: {}", this, owner, getHoldCount());
+    }
+
+    @Override
+    public void lockInterruptibly() throws InterruptedException {
+      boolean acquired = tryLockingWithinLimitedTime();
+      if (Thread.interrupted())
+        throw new InterruptedException("interrupted while ");
+      // Lock only when lock is not acquired in first attempt
+      if(!acquired) {
+        super.lockInterruptibly();
+      }
+      owner = Thread.currentThread().getName();
+      LOG.debug("lock acquired. lock: [{}], owner: [{}], holding count: {}", this, owner, getHoldCount());
+    }
+
+    private boolean tryLockingWithinLimitedTime() {
+      boolean acquired = false;
+      try {
+        acquired = tryLock(5, TimeUnit.SECONDS);
+        if(!acquired) {
+          LOG.warn("failed to acquire in limited time. lock: [{}], owner: [{}], holding count: {}", this, owner, getHoldCount());
+        }
+      } catch (InterruptedException e) {
+        // Need to maintain the same behavior as existing.
+        // So, resetting the interrupt flag and propagating to the caller
+        Thread.currentThread().interrupt();
+      }
+      return acquired;
+    }
+
+    @Override
+    public void unlock() {
+      // Handles the cases of nested locking and release in same thread
+      if(getHoldCount() == 1 && isHeldByCurrentThread()) {
+        owner = null;
+      }
+      super.unlock();
+      LOG.debug("lock released. lock: [{}], owner: [{}], holding count: {}", this, owner, getHoldCount());
+    }
   }
 }
