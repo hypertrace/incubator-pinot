@@ -28,9 +28,15 @@ import org.slf4j.LoggerFactory;
 public class SegmentLocks {
   private static final Logger LOG = LoggerFactory.getLogger(SegmentLocks.class);
   private static final int DEFAULT_NUM_LOCKS = 10000;
+  private static final int SEGMENT_LOCK_WAIT_SECONDS;
 
   private final Lock[] _locks;
   private final int _numLocks;
+
+  static {
+    SEGMENT_LOCK_WAIT_SECONDS = Integer.parseInt(System.getProperty("segmentLockWaitSeconds", "60"));
+    LOG.info("segmentLockWaitSeconds: {}", SEGMENT_LOCK_WAIT_SECONDS);
+  }
 
   public SegmentLocks(int numLocks) {
     _numLocks = numLocks;
@@ -90,7 +96,7 @@ public class SegmentLocks {
     public void lockInterruptibly() throws InterruptedException {
       boolean acquired = tryLockingWithinLimitedTime();
       if (Thread.interrupted())
-        throw new InterruptedException("interrupted while ");
+        throw new InterruptedException("interrupted while trying to acquire lock");
       // Lock only when lock is not acquired in first attempt
       if(!acquired) {
         super.lockInterruptibly();
@@ -102,7 +108,7 @@ public class SegmentLocks {
     private boolean tryLockingWithinLimitedTime() {
       boolean acquired = false;
       try {
-        acquired = tryLock(5, TimeUnit.SECONDS);
+        acquired = tryLock(SEGMENT_LOCK_WAIT_SECONDS, TimeUnit.SECONDS);
         if(!acquired) {
           LOG.warn("failed to acquire in limited time. lock: [{}], owner: [{}], holding count: {}", this, owner, getHoldCount());
         }
