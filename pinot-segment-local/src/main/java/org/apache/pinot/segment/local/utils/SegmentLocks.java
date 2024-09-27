@@ -75,7 +75,7 @@ public class SegmentLocks {
   }
 
   private static class TrackableReentrantLock extends ReentrantLock {
-    private volatile String owner;
+    private volatile String _owner;
 
     public TrackableReentrantLock(boolean fair) {
       super(fair);
@@ -85,32 +85,35 @@ public class SegmentLocks {
     public void lock() {
       boolean acquired = tryLockingWithinLimitedTime();
       // Lock only when lock is not acquired in first attempt
-      if(!acquired) {
+      if (!acquired) {
         super.lock();
       }
-      owner = Thread.currentThread().getName();
-      LOG.debug("lock acquired. lock: [{}], owner: [{}], holding count: {}", this, owner, getHoldCount());
+      _owner = Thread.currentThread().getName();
+      LOG.debug("lock acquired. lock: [{}], owner: [{}], holding count: {}", this, _owner, getHoldCount());
     }
 
     @Override
-    public void lockInterruptibly() throws InterruptedException {
+    public void lockInterruptibly()
+        throws InterruptedException {
       boolean acquired = tryLockingWithinLimitedTime();
-      if (Thread.interrupted())
+      if (Thread.interrupted()) {
         throw new InterruptedException("interrupted while trying to acquire lock");
+      }
       // Lock only when lock is not acquired in first attempt
-      if(!acquired) {
+      if (!acquired) {
         super.lockInterruptibly();
       }
-      owner = Thread.currentThread().getName();
-      LOG.debug("lock acquired. lock: [{}], owner: [{}], holding count: {}", this, owner, getHoldCount());
+      _owner = Thread.currentThread().getName();
+      LOG.debug("lock acquired. lock: [{}], owner: [{}], holding count: {}", this, _owner, getHoldCount());
     }
 
     private boolean tryLockingWithinLimitedTime() {
       boolean acquired = false;
       try {
         acquired = tryLock(SEGMENT_LOCK_WAIT_SECONDS, TimeUnit.SECONDS);
-        if(!acquired) {
-          LOG.warn("failed to acquire in limited time. lock: [{}], owner: [{}], holding count: {}", this, owner, getHoldCount());
+        if (!acquired) {
+          LOG.warn("failed to acquire in limited time. lock: [{}], owner: [{}], holding count: {}", this, _owner,
+              getHoldCount());
         }
       } catch (InterruptedException e) {
         // Need to maintain the same behavior as existing.
@@ -123,11 +126,11 @@ public class SegmentLocks {
     @Override
     public void unlock() {
       // Handles the cases of nested locking and release in same thread
-      if(getHoldCount() == 1 && isHeldByCurrentThread()) {
-        owner = null;
+      if (getHoldCount() == 1 && isHeldByCurrentThread()) {
+        _owner = null;
       }
       super.unlock();
-      LOG.debug("lock released. lock: [{}], owner: [{}], holding count: {}", this, owner, getHoldCount());
+      LOG.debug("lock released. lock: [{}], owner: [{}], holding count: {}", this, _owner, getHoldCount());
     }
   }
 }
