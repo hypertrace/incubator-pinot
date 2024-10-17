@@ -80,10 +80,14 @@ import org.apache.pinot.spi.utils.CommonConstants.Segment.Realtime.Status;
 import org.apache.pinot.spi.utils.TimeUtils;
 import org.apache.pinot.spi.utils.retry.AttemptsExceededException;
 import org.apache.pinot.spi.utils.retry.RetriableOperationException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 @ThreadSafe
 public class RealtimeTableDataManager extends BaseTableDataManager {
+  private static final Logger LOG = LoggerFactory.getLogger(RealtimeTableDataManager.class);
+
   private SegmentBuildTimeLeaseExtender _leaseExtender;
   private RealtimeSegmentStatsHistory _statsHistory;
   private final Semaphore _segmentBuildSemaphore;
@@ -481,7 +485,8 @@ public class RealtimeTableDataManager extends BaseTableDataManager {
     // Generates only one semaphore for every partition
     LLCSegmentName llcSegmentName = new LLCSegmentName(segmentName);
     int partitionGroupId = llcSegmentName.getPartitionGroupId();
-    Semaphore semaphore = _partitionGroupIdToSemaphoreMap.computeIfAbsent(partitionGroupId, k -> new Semaphore(1));
+    Semaphore semaphore = _partitionGroupIdToSemaphoreMap.computeIfAbsent(partitionGroupId,
+        k -> new TrackableBooleanSemaphore(partitionGroupId, true));
 
     // Create the segment data manager and register it
     PartitionUpsertMetadataManager partitionUpsertMetadataManager =
@@ -696,5 +701,63 @@ public class RealtimeTableDataManager extends BaseTableDataManager {
     }
     // 2. Validate the schema itself
     SchemaUtils.validate(schema);
+  }
+
+  private static class TrackableBooleanSemaphore extends Semaphore {
+    private final int _partitionGroupId;
+    private volatile String _owner;
+    private static final int SEMAPHORE_LOCK_WAIT_SECONDS;
+
+    static {
+      SEMAPHORE_LOCK_WAIT_SECONDS = Integer.parseInt(System.getProperty("semaphoreLockWaitSeconds", "60"));
+      LOG.info("semaphoreLockWaitSeconds: {}", SEMAPHORE_LOCK_WAIT_SECONDS);
+    }
+
+    public TrackableBooleanSemaphore(int partitionGroupId, boolean fair) {
+      super(1, fair);
+      _partitionGroupId = partitionGroupId;
+    }
+
+    @Override
+    public void acquire()
+        throws InterruptedException {
+      boolean acquired = tryAcquireWithinLimitedTime();
+      // Acquire only when first attempt is not successful
+      if (!acquired) {
+        super.acquire();
+      }
+      _owner = Thread.currentThread().getName();
+      LOG.debug("semaphore acquired. semaphore: [{}]", this);
+    }
+
+    private boolean tryAcquireWithinLimitedTime() {
+      boolean acquired = false;
+      try {
+        acquired = tryAcquire(SEMAPHORE_LOCK_WAIT_SECONDS, TimeUnit.SECONDS);
+        if (!acquired) {
+          LOG.warn("failed to acquire in limited time. semaphore: [{}]", this);
+        }
+      } catch (InterruptedException e) {
+        // Need to maintain the same behavior as existing.
+        // So, resetting the interrupt flag and propagating to the caller
+        Thread.currentThread().interrupt();
+      }
+      return acquired;
+    }
+
+    @Override
+    public void release() {
+      super.release();
+      if (availablePermits() > 0) {
+        _owner = null;
+      }
+      LOG.debug("semaphore released. sem``aphore: [{}]", this);
+    }
+
+    @Override
+    public String toString() {
+      return "Semaphore@" + Integer.toHexString(hashCode()) + "[_partitionGroupId=" + _partitionGroupId + ", _owner='"
+          + _owner + "', available permits=" + availablePermits() + ']';
+    }
   }
 }
