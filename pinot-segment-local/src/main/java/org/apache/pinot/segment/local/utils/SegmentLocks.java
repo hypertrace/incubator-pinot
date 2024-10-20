@@ -34,7 +34,7 @@ public class SegmentLocks {
       CacheBuilder.newBuilder().weakValues().build(new CacheLoader<>() {
         @Override
         public Lock load(Pair<String, String> key) {
-          return new TrackableReentrantLock(true);
+          return new TrackableReentrantLock(key, true);
         }
       });
 
@@ -71,10 +71,12 @@ public class SegmentLocks {
   }
 
   private static class TrackableReentrantLock extends ReentrantLock {
+    private final String _segmentName;
     private volatile String _owner;
 
-    public TrackableReentrantLock(boolean fair) {
+    public TrackableReentrantLock(Pair<String, String> pair, boolean fair) {
       super(fair);
+      _segmentName = pair.getValue();
     }
 
     @Override
@@ -85,7 +87,7 @@ public class SegmentLocks {
         super.lock();
       }
       _owner = Thread.currentThread().getName();
-      LOG.debug("lock acquired. lock: [{}], owner: [{}], holding count: {}", this, _owner, getHoldCount());
+      LOG.debug("lock acquired. lock: [{}]", this);
     }
 
     @Override
@@ -100,7 +102,7 @@ public class SegmentLocks {
         super.lockInterruptibly();
       }
       _owner = Thread.currentThread().getName();
-      LOG.debug("lock acquired. lock: [{}], owner: [{}], holding count: {}", this, _owner, getHoldCount());
+      LOG.debug("lock acquired. lock: [{}]", this);
     }
 
     private boolean tryLockingWithinLimitedTime() {
@@ -108,8 +110,7 @@ public class SegmentLocks {
       try {
         acquired = tryLock(SEGMENT_LOCK_WAIT_SECONDS, TimeUnit.SECONDS);
         if (!acquired) {
-          LOG.warn("failed to acquire in limited time. lock: [{}], owner: [{}], holding count: {}", this, _owner,
-              getHoldCount());
+          LOG.warn("failed to acquire in limited time. lock: [{}]", this);
         }
       } catch (InterruptedException e) {
         // Need to maintain the same behavior as existing.
@@ -126,7 +127,13 @@ public class SegmentLocks {
         _owner = null;
       }
       super.unlock();
-      LOG.debug("lock released. lock: [{}], owner: [{}], holding count: {}", this, _owner, getHoldCount());
+      LOG.debug("lock released. lock: [{}]", this);
+    }
+
+    @Override
+    public String toString() {
+      return "TrackableReentrantLock@" + Integer.toHexString(hashCode()) + "{_segmentName='" + _segmentName
+          + "', _owner='" + _owner + "', holding count=" + getHoldCount() + '}';
     }
   }
 }

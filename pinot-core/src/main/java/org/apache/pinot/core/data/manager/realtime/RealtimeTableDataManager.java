@@ -751,13 +751,13 @@ public class RealtimeTableDataManager extends BaseTableDataManager {
       if (availablePermits() > 0) {
         _owner = null;
       }
-      LOG.debug("semaphore released. sem``aphore: [{}]", this);
+      LOG.debug("semaphore released. semaphore: [{}]", this);
     }
 
     @Override
     public String toString() {
-      return "Semaphore@" + Integer.toHexString(hashCode()) + "[_partitionGroupId=" + _partitionGroupId + ", _owner='"
-          + _owner + "', available permits=" + availablePermits() + ']';
+      return "Semaphore@" + Integer.toHexString(hashCode()) + "{_partitionGroupId=" + _partitionGroupId + ", _owner='"
+          + _owner + "', available permits=" + availablePermits() + '}';
     }
   }
 }
