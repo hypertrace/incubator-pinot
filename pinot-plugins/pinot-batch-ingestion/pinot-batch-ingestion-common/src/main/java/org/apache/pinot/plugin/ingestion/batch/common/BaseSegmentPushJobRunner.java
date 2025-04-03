@@ -18,7 +18,6 @@
  */
 package org.apache.pinot.plugin.ingestion.batch.common;
 
-import com.google.common.base.Preconditions;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -113,8 +112,8 @@ public abstract class BaseSegmentPushJobRunner implements IngestionJobRunner {
     for (String tarFilePath : tarFilePaths) {
       File tarFile = new File(tarFilePath);
       String fileName = tarFile.getName();
-      Preconditions.checkArgument(fileName.endsWith(Constants.TAR_GZ_FILE_EXT));
-      String segmentName = fileName.substring(0, fileName.length() - Constants.TAR_GZ_FILE_EXT.length());
+      String segmentName = fileName.endsWith(Constants.TAR_GZ_FILE_EXT)
+          ? fileName.substring(0, fileName.length() - Constants.TAR_GZ_FILE_EXT.length()) : fileName;
       segmentNames.add(segmentName);
     }
     return segmentNames;
