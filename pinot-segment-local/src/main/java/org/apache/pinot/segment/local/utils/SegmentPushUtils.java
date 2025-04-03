@@ -369,6 +369,7 @@ public class SegmentPushUtils implements Serializable {
     for (String file : files) {
       if (pushFilePathMatcher != null) {
         if (!pushFilePathMatcher.matches(Paths.get(file))) {
+          LOGGER.info("Ignoring file {}", file);
           continue;
         }
       }
