@@ -18,7 +18,6 @@
  */
 package org.apache.pinot.segment.local.utils;
 
-import com.google.common.base.Preconditions;
 import java.io.File;
 import java.io.InputStream;
 import java.io.Serializable;
@@ -152,8 +151,8 @@ public class SegmentPushUtils implements Serializable {
       URI tarFileURI = URI.create(tarFilePath);
       File tarFile = new File(tarFilePath);
       String fileName = tarFile.getName();
-      Preconditions.checkArgument(fileName.endsWith(Constants.TAR_GZ_FILE_EXT));
-      String segmentName = fileName.substring(0, fileName.length() - Constants.TAR_GZ_FILE_EXT.length());
+      String segmentName = fileName.endsWith(Constants.TAR_GZ_FILE_EXT)
+          ? fileName.substring(0, fileName.length() - Constants.TAR_GZ_FILE_EXT.length()) : fileName;
       for (PinotClusterSpec pinotClusterSpec : spec.getPinotClusterSpecs()) {
         URI controllerURI;
         try {
@@ -370,6 +369,7 @@ public class SegmentPushUtils implements Serializable {
     for (String file : files) {
       if (pushFilePathMatcher != null) {
         if (!pushFilePathMatcher.matches(Paths.get(file))) {
+          LOGGER.info("Ignoring file {}", file);
           continue;
         }
       }
@@ -379,11 +379,11 @@ public class SegmentPushUtils implements Serializable {
         // Skip segment metadata tar gz files
         continue;
       }
-      if (uri.getPath().endsWith(Constants.TAR_GZ_FILE_EXT)) {
-        URI updatedURI = SegmentPushUtils.generateSegmentTarURI(outputDirURI, uri, pushSpec.getSegmentUriPrefix(),
-            pushSpec.getSegmentUriSuffix());
-        segmentUriToTarPathMap.put(updatedURI.toString(), file);
-      }
+      //if (uri.getPath().endsWith(Constants.TAR_GZ_FILE_EXT)) {
+      URI updatedURI = SegmentPushUtils.generateSegmentTarURI(outputDirURI, uri, pushSpec.getSegmentUriPrefix(),
+          pushSpec.getSegmentUriSuffix());
+      segmentUriToTarPathMap.put(updatedURI.toString(), file);
+      //}
     }
     return segmentUriToTarPathMap;
   }
