@@ -20,6 +20,7 @@ package org.apache.pinot.segment.local.segment.index.column;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import javax.annotation.Nullable;
 import org.apache.pinot.segment.local.segment.index.loader.IndexLoadingConfig;
@@ -33,6 +34,8 @@ import org.apache.pinot.segment.spi.index.IndexType;
 import org.apache.pinot.segment.spi.index.column.ColumnIndexContainer;
 import org.apache.pinot.segment.spi.index.StandardIndexes;
 import org.apache.pinot.segment.spi.store.SegmentDirectory;
+import org.apache.pinot.spi.config.table.FieldConfig;
+import org.apache.pinot.spi.config.table.TableConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,9 +56,9 @@ public final class PhysicalColumnIndexContainer implements ColumnIndexContainer 
     }
 
     _readersByIndex = new HashMap<>();
+    Map<String, Map<String, String>> columnProperties = indexLoadingConfig.getColumnProperties();
     for (IndexType<?, ?, ?> indexType : IndexService.getInstance().getAllIndexes()) {
       boolean hasIndexFor = segmentReader.hasIndexFor(columnName, indexType);
-      Map<String, Map<String, String>> columnProperties = indexLoadingConfig.getColumnProperties();
       if (!indexType.getId().equals(StandardIndexes.TEXT_ID)) {
         // process all index types other than Text Index as-it-is
         prepareIndexReader(segmentReader, indexType, fieldIndexConfigs, metadata);
@@ -65,6 +68,7 @@ public final class PhysicalColumnIndexContainer implements ColumnIndexContainer 
       } else {
         LOGGER.info("skipping index reader for segmentDir: {} for column: {} with skipExistingSegments.",
                 segmentReader.toSegmentDirectory().getIndexDir().toString(), columnName);
+      }
     }
   }
 

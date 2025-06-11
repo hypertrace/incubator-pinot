@@ -399,8 +399,19 @@ public class IndexLoadingConfig {
     _dirty = true;
   }
 
+  public Map<String, Map<String, String>> getColumnProperties() {
+    Map<String, Map<String, String>> columnProperties = new HashMap<>();
+    List<FieldConfig> fieldConfigs = _tableConfig.getFieldConfigList();
+    if (fieldConfigs != null) {
+      for (FieldConfig fieldConfig : fieldConfigs) {
+        columnProperties.put(fieldConfig.getName(), fieldConfig.getProperties());
+      }
+    }
+    return Map.of();
+  }
+
   /**
-   * Helper method to skip processing segments if the property SKIP_EXISTING_SEGMENTS is
+   * Helper methods to skip processing segments if the property SKIP_EXISTING_SEGMENTS is
    * set to true in fieldConfigList.
    *
    * e.g
