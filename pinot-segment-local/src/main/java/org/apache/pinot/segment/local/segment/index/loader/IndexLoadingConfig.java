@@ -433,5 +433,4 @@ public class IndexLoadingConfig {
     }
     return !Boolean.parseBoolean(columnProperties.get(columnName).get(skipExistingSegments));
   }
-
 }
