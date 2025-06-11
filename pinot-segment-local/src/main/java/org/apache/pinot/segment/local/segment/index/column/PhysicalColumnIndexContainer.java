@@ -31,6 +31,7 @@ import org.apache.pinot.segment.spi.index.IndexReaderFactory;
 import org.apache.pinot.segment.spi.index.IndexService;
 import org.apache.pinot.segment.spi.index.IndexType;
 import org.apache.pinot.segment.spi.index.column.ColumnIndexContainer;
+import org.apache.pinot.segment.spi.index.StandardIndexes;
 import org.apache.pinot.segment.spi.store.SegmentDirectory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,16 +54,34 @@ public final class PhysicalColumnIndexContainer implements ColumnIndexContainer 
 
     _readersByIndex = new HashMap<>();
     for (IndexType<?, ?, ?> indexType : IndexService.getInstance().getAllIndexes()) {
-      if (segmentReader.hasIndexFor(columnName, indexType)) {
-        IndexReaderFactory<?> readerProvider = indexType.getReaderFactory();
-        try {
-          IndexReader reader = readerProvider.createIndexReader(segmentReader, fieldIndexConfigs, metadata);
-          if (reader != null) {
-            _readersByIndex.put(indexType, reader);
-          }
-        } catch (IndexReaderConstraintException ex) {
-          LOGGER.warn("Constraint violation when indexing {} with {} index", columnName, indexType, ex);
+      boolean hasIndexFor = segmentReader.hasIndexFor(columnName, indexType);
+      Map<String, Map<String, String>> columnProperties = indexLoadingConfig.getColumnProperties();
+      if (!indexType.getId().equals(StandardIndexes.TEXT_ID)) {
+        // process all index types other than Text Index as-it-is
+        prepareIndexReader(segmentReader, indexType, fieldIndexConfigs, metadata);
+      } else if (IndexLoadingConfig.processExistingSegments(columnName, columnProperties) || hasIndexFor) {
+        // In case of Text Index, process segments only if property allows it OR text index exists on disk
+        prepareIndexReader(segmentReader, indexType, fieldIndexConfigs, metadata);
+      } else {
+        LOGGER.info("skipping index reader for segmentDir: {} for column: {} with skipExistingSegments.",
+                segmentReader.toSegmentDirectory().getIndexDir().toString(), columnName);
+    }
+  }
+
+  private void prepareIndexReader(SegmentDirectory.Reader segmentReader,
+                                  IndexType<?, ?, ?> indexType,
+                                  FieldIndexConfigs fieldIndexConfigs,
+                                  ColumnMetadata metadata) {
+    String columnName = metadata.getColumnName();
+    if (segmentReader.hasIndexFor(columnName, indexType)) {
+      IndexReaderFactory<?> readerProvider = indexType.getReaderFactory();
+      try {
+        IndexReader reader = readerProvider.createIndexReader(segmentReader, fieldIndexConfigs, metadata);
+        if (reader != null) {
+          _readersByIndex.put(indexType, reader);
         }
+      } catch (IndexReaderConstraintException | IOException ex) {
+        LOGGER.warn("Constraint violation when indexing {} with {} index", columnName, indexType, ex);
       }
     }
   }
