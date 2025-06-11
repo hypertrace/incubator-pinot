@@ -165,7 +165,7 @@ public class TextIndexHandler extends BaseIndexHandler {
     if (columnMetadata != null) {
       // Fail fast upon unsupported operations.
       checkUnsupportedOperationsForTextIndex(columnMetadata);
-      // skip creating text index if SKIP_EXISTING_SEGMENTS is set to true.More actions
+      // skip creating text index if SKIP_EXISTING_SEGMENTS is set to true.
       return IndexLoadingConfig.processExistingSegments(columnMetadata.getColumnName(), _columnProperties);
     }
     return false;
