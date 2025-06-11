@@ -689,8 +689,12 @@ public class SegmentPreProcessorTest {
           throws Exception {
     buildSegment(segmentVersion);
 
-    FieldConfig fieldConfig = new FieldConfig(EXISTING_STRING_COL_RAW, FieldConfig.EncodingType.RAW, FieldConfig.IndexType.TEXT,
-            null, null, null,
+    FieldConfig fieldConfig = new FieldConfig(EXISTING_STRING_COL_RAW,
+            FieldConfig.EncodingType.RAW,
+            FieldConfig.IndexType.TEXT,
+            null,
+            null,
+            null,
             Map.of("skipExistingSegments", "true"));
     _fieldConfigMap.put(EXISTING_STRING_COL_RAW, fieldConfig);
     runPreProcessor(_schema);
@@ -706,8 +710,12 @@ public class SegmentPreProcessorTest {
           throws Exception {
     buildSegment(segmentVersion);
 
-    FieldConfig fieldConfig = new FieldConfig(EXISTING_STRING_COL_RAW, FieldConfig.EncodingType.RAW, FieldConfig.IndexType.TEXT,
-            null, null, null,
+    FieldConfig fieldConfig = new FieldConfig(EXISTING_STRING_COL_RAW,
+            FieldConfig.EncodingType.RAW,
+            FieldConfig.IndexType.TEXT,
+            null,
+            null,
+            null,
             Map.of("skipExistingSegments", "false"));
     _fieldConfigMap.put(EXISTING_STRING_COL_RAW, fieldConfig);
     runPreProcessor(_schema);
