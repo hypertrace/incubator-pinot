@@ -398,4 +398,39 @@ public class IndexLoadingConfig {
     }
     _dirty = true;
   }
+
+  public Map<String, Map<String, String>> getColumnProperties() {
+    Map<String, Map<String, String>> columnProperties = new HashMap<>();
+    List<FieldConfig> fieldConfigs = _tableConfig.getFieldConfigList();
+    if (fieldConfigs != null) {
+      for (FieldConfig fieldConfig : fieldConfigs) {
+        columnProperties.put(fieldConfig.getName(), fieldConfig.getProperties());
+      }
+    }
+    return Map.of();
+  }
+
+  /**
+   * Helper methods to skip processing segments if the property SKIP_EXISTING_SEGMENTS is
+   * set to true in fieldConfigList.
+   *
+   * e.g
+   * "fieldConfigList":[
+   *   {
+   *      "name":"text_col_1",
+   *      "encodingType":"RAW",
+   *      "indexTypes": ["TEXT"],
+   *      "properties":{"fstType":"lucene", "skipExistingSegments":"true"}
+   *   }
+   *  ]
+   * */
+  public static boolean processExistingSegments(String columnName, Map<String, Map<String, String>> columnProperties) {
+    final String skipExistingSegments = "skipExistingSegments";
+    if (!columnProperties.containsKey(columnName)
+            || columnProperties.get(columnName) == null
+            || !columnProperties.get(columnName).containsKey(skipExistingSegments)) {
+      return true;
+    }
+    return !Boolean.parseBoolean(columnProperties.get(columnName).get(skipExistingSegments));
+  }
 }

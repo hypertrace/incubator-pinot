@@ -681,6 +681,48 @@ public class SegmentPreProcessorTest {
   }
 
   /**
+   * Test to check if text index creation skipped if SKIP_EXISTING_SEGMENTS set to true
+   * @throws Exception
+   */
+  @Test(dataProvider = "bothV1AndV3")
+  public void testSkipTextIndexCreationOnExistingSegmentForRawColumn(SegmentVersion segmentVersion)
+          throws Exception {
+    buildSegment(segmentVersion);
+
+    FieldConfig fieldConfig = new FieldConfig(EXISTING_STRING_COL_RAW,
+            FieldConfig.EncodingType.RAW,
+            FieldConfig.IndexType.TEXT,
+            null,
+            null,
+            null,
+            Map.of("skipExistingSegments", "true"));
+    _fieldConfigMap.put(EXISTING_STRING_COL_RAW, fieldConfig);
+    runPreProcessor(_schema);
+    validateIndexDoesNotExist(EXISTING_STRING_COL_RAW, StandardIndexes.text());
+  }
+
+  /**
+   * Test to check if text index creation skipped if SKIP_EXISTING_SEGMENTS set to false
+   * @throws Exception
+   */
+  @Test(dataProvider = "bothV1AndV3")
+  public void testDoNotSkipTextIndexCreationOnExistingSegmentForRawColumn(SegmentVersion segmentVersion)
+          throws Exception {
+    buildSegment(segmentVersion);
+
+    FieldConfig fieldConfig = new FieldConfig(EXISTING_STRING_COL_RAW,
+            FieldConfig.EncodingType.RAW,
+            FieldConfig.IndexType.TEXT,
+            null,
+            null,
+            null,
+            Map.of("skipExistingSegments", "false"));
+    _fieldConfigMap.put(EXISTING_STRING_COL_RAW, fieldConfig);
+    runPreProcessor(_schema);
+    validateIndexExists(EXISTING_STRING_COL_RAW, StandardIndexes.text());
+  }
+
+  /**
    * Test to check text index creation during segment load after text index
    * creation is enabled on an existing raw column.
    * This will exercise the SegmentPreprocessor code path during segment load
