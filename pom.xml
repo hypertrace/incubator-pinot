@@ -560,11 +560,13 @@
         <artifactId>pinot-kinesis</artifactId>
         <version>${project.version}</version>
       </dependency>
+      <!--
       <dependency>
         <groupId>org.apache.pinot</groupId>
         <artifactId>pinot-pulsar</artifactId>
         <version>${project.version}</version>
       </dependency>
+      -->
       <!-- Input Format -->
       <dependency>
         <groupId>org.apache.pinot</groupId>
@@ -1371,8 +1373,8 @@
       </dependency>
       <dependency>
         <groupId>org.apache.hadoop.thirdparty</groupId>
-        <artifactId>hadoop-shaded-protobuf_3_21</artifactId>
-        <version>1.2.0</version>
+        <artifactId>hadoop-shaded-protobuf_3_25</artifactId>
+        <version>1.4.0</version>
       </dependency>
 
       <!-- Metrics -->
