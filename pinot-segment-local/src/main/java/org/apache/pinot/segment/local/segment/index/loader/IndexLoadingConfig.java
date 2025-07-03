@@ -401,10 +401,13 @@ public class IndexLoadingConfig {
 
   public Map<String, Map<String, String>> getColumnProperties() {
     Map<String, Map<String, String>> columnProperties = new HashMap<>();
-    List<FieldConfig> fieldConfigs = _tableConfig.getFieldConfigList();
-    if (fieldConfigs != null) {
-      for (FieldConfig fieldConfig : fieldConfigs) {
-        columnProperties.put(fieldConfig.getName(), fieldConfig.getProperties());
+    if (_tableConfig != null) {
+      List<FieldConfig> fieldConfigs = _tableConfig.getFieldConfigList();
+      if (fieldConfigs != null) {
+        for (FieldConfig fieldConfig : fieldConfigs) {
+          columnProperties.put(fieldConfig.getName(), fieldConfig.getProperties());
+        }
+        return columnProperties;
       }
     }
     return Map.of();
