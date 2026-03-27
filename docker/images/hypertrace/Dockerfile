@@ -1,5 +1,9 @@
 FROM eclipse-temurin:11-jre-noble
 
+RUN apt-get update && \
+    apt-get upgrade -y && \
+    rm -rf /var/lib/apt/lists/*
+
 ENV PINOT_HOME=/opt/pinot
 
 COPY pinot-distribution/target/apache-pinot-1.3.0-bin/apache-pinot-1.3.0-bin /opt/pinot
