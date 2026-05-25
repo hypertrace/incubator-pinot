@@ -144,7 +144,7 @@
     <zkclient.version>0.11</zkclient.version>
     <jackson.version>2.18.6</jackson.version>
     <zookeeper.version>3.9.5</zookeeper.version>
-    <async-http-client.version>3.0.1</async-http-client.version>
+    <async-http-client.version>3.0.10</async-http-client.version>
     <jersey.version>2.46</jersey.version>
     <hk2.version>2.6.1</hk2.version>
     <swagger.version>1.6.14</swagger.version>
@@ -167,7 +167,7 @@
     <libthrift.verion>0.18.1</libthrift.verion>
     <log4j.version>2.25.4</log4j.version>
     <slf4j.version>2.0.16</slf4j.version>
-    <netty.version>4.1.132.Final</netty.version>
+    <netty.version>4.1.134.Final</netty.version>
     <reactivestreams.version>1.0.4</reactivestreams.version>
     <jts.version>1.20.0</jts.version>
     <h3.version>4.1.1</h3.version>
@@ -201,7 +201,7 @@
     <commons-compress.version>1.27.1</commons-compress.version>
     <commons-math3.version>3.6.1</commons-math3.version>
     <commons-csv.version>1.12.0</commons-csv.version>
-    <commons-configuration2.version>2.11.0</commons-configuration2.version>
+    <commons-configuration2.version>2.15.0</commons-configuration2.version>
     <commons-beanutils.version>1.11.0</commons-beanutils.version>
     <commons-io.version>2.18.0</commons-io.version>
     <commons-codec.version>1.17.2</commons-codec.version>
@@ -251,7 +251,7 @@
     <jettison.version>1.5.4</jettison.version>
     <nimbus-jose-jwt.version>10.0.2</nimbus-jose-jwt.version>
     <dnsjava.version>3.6.2</dnsjava.version>
-    <eclipse.jetty.version>9.4.57.v20241219</eclipse.jetty.version>
+    <eclipse.jetty.version>9.4.58.v20250814</eclipse.jetty.version>
     <woodstox.version>7.1.0</woodstox.version>
     <curator.version>5.7.1</curator.version>
     <javassist.version>3.30.2-GA</javassist.version>
