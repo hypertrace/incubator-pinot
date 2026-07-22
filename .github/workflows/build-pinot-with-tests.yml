@@ -1,0 +1,52 @@
+name: Build Pinot
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-pinot:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 11 for x64
+        uses: actions/setup-java@v4
+        with:
+          java-version: '11'
+          distribution: 'temurin'
+          architecture: x64
+          cache: maven
+
+      - name: Build with Maven
+        timeout-minutes: 180
+        env:
+          MAVEN_OPTS: >
+            -Xmx2G -DfailIfNoTests=false
+            -B -ntp
+            -XX:+IgnoreUnrecognizedVMOptions
+            --add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED
+            --add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED
+            --add-exports=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED
+            --add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED
+            --add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED
+            --add-opens=java.base/java.nio=ALL-UNNAMED
+            --add-opens=java.base/sun.nio.ch=ALL-UNNAMED
+        run: mvn install package -Drat.ignoreErrors=true -Pbin-dist -Pbuild-shaded-jar -Pgithub-actions -Djdk.version=11
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: docker/images/hypertrace/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: false
+          tags: hypertrace/hypertrace-pinot:test
