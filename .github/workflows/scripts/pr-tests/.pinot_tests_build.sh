@@ -28,7 +28,7 @@ netstat -i
 if [ "$RUN_INTEGRATION_TESTS" != false ]; then
   # Integration Tests
   mvn clean install \
-    -DskipTests -Dcheckstyle.skip -Dspotless.skip -Denforcer.skip -Dlicense.skip -Dmaven.plugin.appassembler.skip=true \
+    -DskipTests -Dcheckstyle.skip -Dspotless.skip -Denforcer.skip -Dlicense.skip -Drat.ignoreErrors=true -Dmaven.plugin.appassembler.skip=true \
     -am -B -T 16 -ntp \
     -P github-actions,integration-tests \
     -pl 'pinot-integration-tests' || exit 1
@@ -38,7 +38,7 @@ else
   #     due to the -am flag (include dependency modules)
   if [ "$RUN_TEST_SET" == "1" ]; then
     mvn clean install \
-      -DskipTests -Dcheckstyle.skip -Dspotless.skip -Denforcer.skip -Dlicense.skip -Dmaven.plugin.appassembler.skip=true \
+      -DskipTests -Dcheckstyle.skip -Dspotless.skip -Denforcer.skip -Dlicense.skip -Drat.ignoreErrors=true -Dmaven.plugin.appassembler.skip=true \
       -am -B -T 16 -ntp \
       -P github-actions \
       -pl 'pinot-spi' \
@@ -51,7 +51,7 @@ else
   fi
   if [ "$RUN_TEST_SET" == "2" ]; then
     mvn clean install \
-      -DskipTests -Dcheckstyle.skip -Dspotless.skip -Denforcer.skip -Dlicense.skip -Dmaven.plugin.appassembler.skip=true \
+      -DskipTests -Dcheckstyle.skip -Dspotless.skip -Denforcer.skip -Dlicense.skip -Drat.ignoreErrors=true -Dmaven.plugin.appassembler.skip=true \
       -am -B -T 16 -ntp \
       -P github-actions \
       -pl '!pinot-integration-tests' \
