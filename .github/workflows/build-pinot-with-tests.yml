@@ -21,7 +21,7 @@ jobs:
           cache: maven
 
       - name: Build with Maven
-        timeout-minutes: 180
+        timeout-minutes: 330
         env:
           MAVEN_OPTS: >
             -Xmx2G -DfailIfNoTests=false
