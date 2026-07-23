@@ -4,15 +4,153 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-pinot:
+  unit-test:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        testset: [1, 2]
+    name: Unit Test Set ${{ matrix.testset }}
     steps:
       - name: Check out code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Set up JDK 11 for x64
+      - name: Set up JDK 11
+        uses: actions/setup-java@v4
+        with:
+          java-version: '11'
+          distribution: 'temurin'
+          architecture: x64
+          cache: maven
+
+      - name: Build Project
+        timeout-minutes: 180
+        env:
+          RUN_INTEGRATION_TESTS: false
+          RUN_TEST_SET: ${{ matrix.testset }}
+          MAVEN_OPTS: >
+            -Xmx2G -DfailIfNoTests=false
+            -XX:+IgnoreUnrecognizedVMOptions
+            --add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED
+            --add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED
+            --add-exports=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED
+            --add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED
+            --add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED
+            --add-opens=java.base/java.nio=ALL-UNNAMED
+            --add-opens=java.base/sun.nio.ch=ALL-UNNAMED
+        run: .github/workflows/scripts/pr-tests/.pinot_tests_build.sh
+
+      - name: Unit Test
+        timeout-minutes: 180
+        env:
+          RUN_INTEGRATION_TESTS: false
+          RUN_TEST_SET: ${{ matrix.testset }}
+          MAVEN_OPTS: >
+            -Xmx2G -DfailIfNoTests=false
+            -XX:+IgnoreUnrecognizedVMOptions
+            --add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED
+            --add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED
+            --add-exports=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED
+            --add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED
+            --add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED
+            --add-opens=java.base/java.nio=ALL-UNNAMED
+            --add-opens=java.base/sun.nio.ch=ALL-UNNAMED
+        run: .github/workflows/scripts/pr-tests/.pinot_tests_unit.sh
+
+  integration-test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        testset: [1, 2]
+    name: Integration Test Set ${{ matrix.testset }}
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 11
+        uses: actions/setup-java@v4
+        with:
+          java-version: '11'
+          distribution: 'temurin'
+          architecture: x64
+          cache: maven
+
+      - name: Build Project
+        timeout-minutes: 120
+        env:
+          RUN_INTEGRATION_TESTS: true
+          MAVEN_OPTS: >
+            -Xmx2G -DskipShade -DfailIfNoTests=false
+            -XX:+IgnoreUnrecognizedVMOptions
+            --add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED
+            --add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED
+            --add-exports=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED
+            --add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED
+            --add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED
+            --add-opens=java.base/java.nio=ALL-UNNAMED
+            --add-opens=java.base/sun.nio.ch=ALL-UNNAMED
+        run: .github/workflows/scripts/pr-tests/.pinot_tests_build.sh
+
+      - name: Integration Test
+        timeout-minutes: 120
+        env:
+          RUN_INTEGRATION_TESTS: true
+          RUN_TEST_SET: ${{ matrix.testset }}
+          MAVEN_OPTS: >
+            -Xmx2G -DskipShade -DfailIfNoTests=false
+            -XX:+IgnoreUnrecognizedVMOptions
+            --add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED
+            --add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED
+            --add-exports=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED
+            --add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED
+            --add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED
+            --add-opens=java.base/java.nio=ALL-UNNAMED
+            --add-opens=java.base/sun.nio.ch=ALL-UNNAMED
+        run: .github/workflows/scripts/pr-tests/.pinot_tests_integration.sh
+
+      - name: Custom Integration Test
+        if: ${{ matrix.testset == 1 }}
+        timeout-minutes: 120
+        env:
+          RUN_INTEGRATION_TESTS: true
+          RUN_TEST_SET: ${{ matrix.testset }}
+          MAVEN_OPTS: >
+            -Xmx2G -DskipShade -DfailIfNoTests=false
+            -XX:+IgnoreUnrecognizedVMOptions
+            --add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED
+            --add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED
+            --add-exports=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED
+            --add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED
+            --add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED
+            --add-opens=java.base/java.nio=ALL-UNNAMED
+            --add-opens=java.base/sun.nio.ch=ALL-UNNAMED
+        run: .github/workflows/scripts/pr-tests/.pinot_tests_custom_integration.sh
+
+      - name: Upload Surefire Reports
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: surefire-reports-integration-test-${{ matrix.testset }}
+          path: |
+            **/target/surefire-reports/
+          retention-days: 14
+
+  build-docker:
+    runs-on: ubuntu-latest
+    needs: [unit-test, integration-test]
+    name: Build (no tests) + Docker Image
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 11
         uses: actions/setup-java@v4
         with:
           java-version: '11'
@@ -24,8 +162,7 @@ jobs:
         timeout-minutes: 330
         env:
           MAVEN_OPTS: >
-            -Xmx2G -DfailIfNoTests=false
-            -B -ntp
+            -Xmx2G
             -XX:+IgnoreUnrecognizedVMOptions
             --add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED
             --add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED
@@ -34,7 +171,10 @@ jobs:
             --add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED
             --add-opens=java.base/java.nio=ALL-UNNAMED
             --add-opens=java.base/sun.nio.ch=ALL-UNNAMED
-        run: mvn install package -Drat.ignoreErrors=true -Pbin-dist -Pbuild-shaded-jar -Pgithub-actions -Djdk.version=11 -pl '!pinot-integration-tests'
+        run: >
+          mvn install package -DskipTests -Drat.ignoreErrors=true -Dlicense.skip=true
+          -Pbin-dist -Pbuild-shaded-jar -Pgithub-actions -Djdk.version=11
+          -pl '!pinot-integration-tests' -T1C -B -ntp
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -42,7 +182,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build image
+      - name: Build Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
