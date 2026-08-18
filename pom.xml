@@ -138,6 +138,21 @@
 
     <avro.version>1.11.4</avro.version>
     <parquet.version>1.15.2</parquet.version>
+    <!--
+      parquet-jackson is a shaded uber-jar that relocates Jackson under
+      shaded.parquet.com.fasterxml.jackson.*. parquet 1.15.2 bundles the vulnerable Jackson 2.18.1
+      there, and because those classes are relocated (not resolved as a Maven dependency node),
+      dependencyManagement of com.fasterxml.jackson.core cannot override them. They cannot be
+      stripped either: org.apache.parquet.hadoop.metadata.ParquetMetadata builds a static
+      ObjectMapper in its class initializer and is loaded on every read, so removing the classes
+      would throw NoClassDefFoundError. So pin only parquet-jackson to 1.18.0, whose shaded Jackson
+      is 2.22.1 (clear of CVE-2026-54512/54513, CVE-2026-18401, CVE-2026-59889 and related GHSAs).
+      1.16.0 (Jackson 2.19.2) and 1.17.1 (2.21.3) were checked and are still in the affected ranges.
+      The referenced shaded-Jackson API (ObjectMapper / ObjectWriter / SerializationFeature /
+      JsonNode / JsonParser / TypeReference) is binary compatible with parquet-hadoop/column 1.15.2,
+      so the rest of parquet stays on 1.15.2.
+    -->
+    <parquet.jackson.version>1.18.0</parquet.jackson.version>
     <orc.version>1.9.5</orc.version>
     <hive.version>2.8.1</hive.version>
     <helix.version>1.3.2</helix.version>
@@ -879,6 +894,13 @@
         <groupId>org.apache.parquet</groupId>
         <artifactId>parquet-hadoop</artifactId>
         <version>${parquet.version}</version>
+      </dependency>
+      <!-- Override transitive parquet-jackson (pulled by parquet-hadoop) build whose bundled Jackson patched.
+           See note on parquet.jackson.version above. -->
+      <dependency>
+        <groupId>org.apache.parquet</groupId>
+        <artifactId>parquet-jackson</artifactId>
+        <version>${parquet.jackson.version}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.orc</groupId>
