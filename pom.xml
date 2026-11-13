@@ -137,27 +137,19 @@
     <shade.phase.prop>none</shade.phase.prop>
 
     <avro.version>1.11.4</avro.version>
-    <parquet.version>1.15.2</parquet.version>
     <!--
-      parquet-jackson is a shaded uber-jar that relocates Jackson under
-      shaded.parquet.com.fasterxml.jackson.*. parquet 1.15.2 bundles the vulnerable Jackson 2.18.1
-      there, and because those classes are relocated (not resolved as a Maven dependency node),
-      dependencyManagement of com.fasterxml.jackson.core cannot override them. They cannot be
-      stripped either: org.apache.parquet.hadoop.metadata.ParquetMetadata builds a static
-      ObjectMapper in its class initializer and is loaded on every read, so removing the classes
-      would throw NoClassDefFoundError. So pin only parquet-jackson to 1.18.0, whose shaded Jackson
-      is 2.22.1 (clear of CVE-2026-54512/54513, CVE-2026-18401, CVE-2026-59889 and related GHSAs).
-      1.16.0 (Jackson 2.19.2) and 1.17.1 (2.21.3) were checked and are still in the affected ranges.
-      The referenced shaded-Jackson API (ObjectMapper / ObjectWriter / SerializationFeature /
-      JsonNode / JsonParser / TypeReference) is binary compatible with parquet-hadoop/column 1.15.2,
-      so the rest of parquet stays on 1.15.2.
+      Bumped the whole parquet stack 1.15.2 -> 1.18.2 to fix CVE-2026-73334 in parquet-hadoop.
+      parquet 1.18.2 also bundles the patched, shaded Jackson 2.22.4 inside parquet-jackson
+      (clear of CVE-2026-110879 and the jackson-databind/jackson-core CVE ranges), so the dedicated
+      parquet-jackson override below is kept in sync at the same version.
     -->
-    <parquet.jackson.version>1.18.0</parquet.jackson.version>
+    <parquet.version>1.18.2</parquet.version>
+    <parquet.jackson.version>1.18.2</parquet.jackson.version>
     <orc.version>1.9.5</orc.version>
     <hive.version>2.8.1</hive.version>
     <helix.version>1.3.2</helix.version>
     <zkclient.version>0.11</zkclient.version>
-    <jackson.version>2.18.11</jackson.version>
+    <jackson.version>2.18.12</jackson.version>
     <zookeeper.version>3.9.6</zookeeper.version>
     <async-http-client.version>3.0.14</async-http-client.version>
     <jersey.version>2.46</jersey.version>
@@ -166,7 +158,7 @@
     <swagger-ui.version>5.18.2</swagger-ui.version>
     <hadoop.version>3.4.2</hadoop.version>
     <jsonpath.version>2.9.0</jsonpath.version>
-    <jsonsmart.version>2.5.2</jsonsmart.version>
+    <jsonsmart.version>2.6.1</jsonsmart.version>
     <quartz.version>2.5.0</quartz.version>
     <calcite.version>1.37.0</calcite.version>
     <immutables.version>2.10.1</immutables.version>
@@ -182,7 +174,7 @@
     <libthrift.verion>0.18.1</libthrift.verion>
     <log4j.version>2.25.5</log4j.version>
     <slf4j.version>2.0.16</slf4j.version>
-    <netty.version>4.1.137.Final</netty.version>
+    <netty.version>4.1.138.Final</netty.version>
     <reactivestreams.version>1.0.4</reactivestreams.version>
     <jts.version>1.20.0</jts.version>
     <h3.version>4.1.1</h3.version>
@@ -246,6 +238,7 @@
     <httpcore5.version>5.4.3</httpcore5.version>
 
     <!-- Google Libraries -->
+    <guava.version>33.7.2-jre</guava.version>
     <protobuf.version>3.25.5</protobuf.version>
     <grpc.version>1.69.0</grpc.version>
     <google.cloud.libraries.version>26.52.0</google.cloud.libraries.version>
@@ -1245,6 +1238,13 @@
         <groupId>com.google.re2j</groupId>
         <artifactId>re2j</artifactId>
         <version>${google.re2j.version}</version>
+      </dependency>
+      <!-- Force guava to a patched version to fix CVE-2026-102554. Pinot pulls guava only
+           transitively (32.0.1-jre / 33.3.1-jre), so pin it here to override those. -->
+      <dependency>
+        <groupId>com.google.guava</groupId>
+        <artifactId>guava</artifactId>
+        <version>${guava.version}</version>
       </dependency>
       <!-- Solve the dependency converge issue between guava and calcite-core -->
       <dependency>
