@@ -1239,13 +1239,6 @@
         <artifactId>re2j</artifactId>
         <version>${google.re2j.version}</version>
       </dependency>
-      <!-- Force guava to a patched version to fix CVE-2026-102554. Pinot pulls guava only
-           transitively (32.0.1-jre / 33.3.1-jre), so pin it here to override those. -->
-      <dependency>
-        <groupId>com.google.guava</groupId>
-        <artifactId>guava</artifactId>
-        <version>${guava.version}</version>
-      </dependency>
       <!-- Solve the dependency converge issue between guava and calcite-core -->
       <dependency>
         <groupId>com.google.errorprone</groupId>
