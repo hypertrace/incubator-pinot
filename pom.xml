@@ -143,7 +143,7 @@
       (clear of CVE-2026-110879 and the jackson-databind/jackson-core CVE ranges), so the dedicated
       parquet-jackson override below is kept in sync at the same version.
     -->
-    <parquet.version>1.18.2</parquet.version>
+    <parquet.version>1.15.2</parquet.version>
     <parquet.jackson.version>1.18.2</parquet.jackson.version>
     <orc.version>1.9.5</orc.version>
     <hive.version>2.8.1</hive.version>
